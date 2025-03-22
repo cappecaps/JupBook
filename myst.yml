@@ -14,10 +14,10 @@ project:
     - file: intro.md
     - title: Physical modelling
       children:
-        - file: PhysicsTest1.ipynb
+        - file: modelling/physics/PhysicsTest1.ipynb
     - title: Finance
       children:
-        - file: Finance/FinanceTest1.ipynb
+        - file: modelling/finance/FinanceTest1.ipynb
   # To autogenerate a Table of Contents, run "jupyter book init --write-toc"
   exports:
     - format: pdf
