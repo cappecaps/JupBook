@@ -14,7 +14,7 @@ project:
     - file: intro.md
     - title: Physical modelling
       children:
-        - file: test1.ipynb
+        - file: PhysicsTest1.ipynb
     - title: Finance
       children:
         - file: Finance/FinanceTest1.ipynb
