@@ -53,7 +53,7 @@ $$
 \end{equation}
 $$(diff_pressure)
 
-Where we used equation {eq}'idealgas' to express the numerical density in terms of density and temperature. It is important to note that equation (6) now only depends on variables at the altitude $h$ and its proximity (the derivative), and not on the whole gas column that sits above. This mathematical step permits us to reach for a solution, but at the cost of not being able to find the absolute value of the pressure, expect for getting it empirically. Rearranging equation {eq}`diff_pressure` we have:
+Where we used equation {eq}`idealgas` to express the numerical density in terms of density and temperature. It is important to note that equation (6) now only depends on variables at the altitude $h$ and its proximity (the derivative), and not on the whole gas column that sits above. This mathematical step permits us to reach for a solution, but at the cost of not being able to find the absolute value of the pressure, expect for getting it empirically. Rearranging equation {eq}`diff_pressure` we have:
 
 $$
 \begin{equation}
