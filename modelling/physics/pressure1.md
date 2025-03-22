@@ -51,6 +51,30 @@ $$
 \begin{equation}
 \dfrac{d}{dh}p(h)=-g\,m_0(h)n(h) = -g\,m_0(h)\dfrac{p(h)}{k_BT(h)}
 \end{equation}
+$$(diff_pressure)
+
+Where we used equation ($\ref{idealgas}$) to express the numerical density in terms of density and temperature. It is important to note that equation (6) now only depends on variables at the altitude $h$ and its proximity (the derivative), and not on the whole gas column that sits above. This mathematical step permits us to reach for a solution, but at the cost of not being able to find the absolute value of the pressure, expect for getting it empirically. Rearranging equation ($\ref{diff_pressure}$) we have:
+
+$$
+\begin{equation}
+\dfrac{\dfrac{d}{dh}p(h)}{p(h)}=-\dfrac{g}{k_B}\dfrac{m_0(h)}{T(h)}
+\end{equation}
 $$
 
-Where we used equation $\ref{idealgas}$ to express the numerical density in terms of density and temperature. It is important to note that equation (6) now only depends on variables at the altitude $h$ and its proximity (the derivative), and not on the whole gas column that sits above. This mathematical step permits us to reach for a solution, but at the cost of not being able to find the absolute value of the pressure, expect for getting it empirically. Rearranging equation (6) we have:
+By integrating in $dz$ from $0$ to $h$ we eventually obtain the general solution of how the pressure varies with the altitude:
+
+$$
+\begin{equation}
+p(h)=p(0)\exp\bigg[-\dfrac{g}{k_B}\int_0^h\dfrac{m_0(z)}{T(z)}dz\bigg]
+\end{equation}
+$$
+
+Where $p(0)$, the pressure at $h=0$, is not known, and must be obtained from the observed data. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is 1013.25 hPa. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s assume that are both constants and see how the pressure varies in such simple case. The resolution of the integral becomes trivial, as we have:
+
+$$
+\begin{equation}
+p(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
+\end{equation}
+$$(barometric_formula)
+
+We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ its thermal energy. Wait, what? Well, I rediscovered hot water of course, as equation (9) is called barometric formula. But it is nonetheless interesting to notice that the exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in an uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.

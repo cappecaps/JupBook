@@ -15,6 +15,7 @@ project:
     - title: Physical modelling
       children:
         - file: modelling/physics/PhysicsTest1.ipynb
+        - file: modelling/physics/pressure1.md
     - title: Finance
       children:
         - file: modelling/finance/FinanceTest1.ipynb
