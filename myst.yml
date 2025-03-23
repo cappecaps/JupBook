@@ -24,7 +24,8 @@ project:
       template: lapreprint-typst
       articles: intro.md
 site:
-  template: plain_latex_book
+  template: book-theme
   options:
     favicon: water.ico
     logo: water.png
+    logo_text: The Hot Water Blog
