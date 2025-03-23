@@ -27,4 +27,4 @@ site:
   template: book-theme
   options:
     favicon: water.ico
-  #   logo: site_logo.png
+    logo: water.png
