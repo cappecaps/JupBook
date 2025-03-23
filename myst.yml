@@ -24,7 +24,7 @@ project:
       template: lapreprint-typst
       articles: intro.md
 site:
-  template: book-theme
+  template: plain_latex_book
   options:
     favicon: water.ico
     logo: water.png
