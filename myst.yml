@@ -18,8 +18,6 @@ project:
         - file: modelling/physics/pressure1.md
     #- title: Finance
     - file: modelling/finance/intro_finance.md
-      children:
-        - file: modelling/finance/intro_finance.md
   # To autogenerate a Table of Contents, run "jupyter book init --write-toc"
   exports:
     - format: pdf
