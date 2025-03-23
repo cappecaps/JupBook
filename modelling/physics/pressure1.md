@@ -19,7 +19,7 @@ In this chapter, we will try to find in an ab initio manner how atmospheric pres
 
 ## The barometric formula
 
-Let’s start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature.  From the ideal gas law, the pressure is given by:
+We start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature. From the ideal gas law, the pressure is given by:
 
 $$
 \begin{equation}
@@ -78,3 +78,15 @@ p(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
 $$(barometric_formula)
 
 We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ its thermal energy. Wait, what? Well, I rediscovered hot water of course, as equation (9) is called barometric formula. But it is nonetheless interesting to notice that the exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in an uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
+
+## International Standard Atmosphere
+
+Before moving on to our modelling, we need to first understand how temperature and atmospheric composition vary with altitude. Unfortunately, things are not as easy as one would tell, and digging deeper made me realize that even the concept of altitude is not trivial. The vertical distance from the Earth's mean sea level (MSL) is called the **geometric altitude**. In aviation and meteorology, the **geopotential altitude** is used instead, and it is defined as:
+
+Geopotential altitude
+: vertical coordinate referenced to Earth's MSL that represents the work performed when lifting one unit of mass over one unit of length through a hypothetical space in which the acceleration of gravity is assumed constant.
+
+As you may know, Earth's gravitational field changes not only with altitude, but also with the latitude and, to a minor extent, longitude. The geopotential altitude arises when assuming a constant gravitational field with $g_0=9.80665$ m/s{sup}`2`, and it is related to potential energy, $E=mg_0h$. Specifically, a geopotential difference of $1$ m corresponds to a potential energy difference of $9.80665$ J. For example, on the North Pole, where $g_{np}>g_0$, a geometric height of $1$ m corresponds to a geopotential altitude that is larger than one meter:
+$$
+mg_0h_{geop} = mg_{np}h_{geom} \implies h_{geop} = \dfrac{g_{np}}{g_{0}}h_{geom} > h_{geom}
+$$ 
