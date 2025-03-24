@@ -1,4 +1,4 @@
-# Rediscovery Channel
+# Welcome
  
 > ...and to be really sure you need to have a doubt
 
