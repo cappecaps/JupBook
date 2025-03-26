@@ -65,7 +65,7 @@ $$
 \begin{equation}
 p(h)=p(0)\exp\bigg[-\dfrac{1}{k_B}\int_0^h\dfrac{g(z)m_0(z)}{T(z)}dz\bigg]
 \end{equation}
-$$
+$$(general_formula)
 
 Where $p(0)$, the pressure at $h=0$, is not known, and must be obtained from the observed data. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
 
@@ -121,3 +121,13 @@ There are other layers above, but can be ignored since the atmosphere is extreme
 According to the NRLMSIS empirical model, Earth's atmospheric composition remains rather constant up to $h=80\ \mathrm{km}$. 
 
 ## Adding lapse rate
+Let's start from the barometric formula {eq}`barometric_formula`, and remove the approximations one by one to finally arrive at the general formula {eq}`general_formula`. 
+
+```{code-cell} ipython
+import matplotlib.pyplot as plt
+import numpy as np
+x=np.linspace(0,10,10)
+y=np.linspace(0,10,10)
+plt.plot(x,y)
+plt.show()
+```
