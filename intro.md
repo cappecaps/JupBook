@@ -1,4 +1,4 @@
-# Welcome to Rediscovery Channel
+# Welcome to SideHub
 
 
 > ...and to be really sure you need to have a doubt
