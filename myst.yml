@@ -39,7 +39,7 @@ project:
 site:
   template: book-theme
   options:
-    favicon: Rlogo.png
-    logo: RLogo.png
+    favicon: logo/suricate_logo.png
+    logo: logo/suricate_logo.png
     logo_text: SideHub
     search: true
