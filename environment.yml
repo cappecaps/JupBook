@@ -1,0 +1,8 @@
+name: sidehub
+channels:
+  - default
+dependencies:
+  - python=3.11.9
+  - pip
+  - pip:
+    - jupyter-book==2.0.0
