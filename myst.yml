@@ -11,6 +11,7 @@ project:
    - name: Marco Cappelletti
   github: cappecaps/sidehub
   thumbnail: logo/suricate_logo.png
+  jupyter: true 
 
 
   toc:
