@@ -115,6 +115,7 @@ However, this is not a formula I obtained nor I understand, so that it is outsid
 6. **Mesosphere** (51-71 km): 2.8 °C/km
 7. **Mesosphere** (71-84.852 km): 2.0 °C/km
 
+
 There are other layers above, but can be ignored since the atmosphere is extremely rarefied. It should be noted that the vertical distances of the layers are properly defined using the **geopotential** height, which is different from the **geometric** height, i.e. the mere vertical distance from MSL. In particular, the geopoential distance assumes a constant graviational field, i.e. that doesn't vary with altitude nor latitude. We don't have to go into details, and the reader is referred to the wikipedia article. For what matters to us, the two scales are very close to each other, and in any case we are going to use the geometric altitudes, because we don't like such approximations.
 
 ### Chemical composition
@@ -122,6 +123,7 @@ According to the NRLMSIS empirical model, Earth's atmospheric composition remain
 
 ## Adding lapse rate
 Let's start from the barometric formula {eq}`barometric_formula`, and remove the approximations one by one to finally arrive at the general formula {eq}`general_formula`. 
+
 
 ```{code-cell} ipython
 import matplotlib.pyplot as plt
