@@ -46,28 +46,3 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  #Added my me
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install jupyter-book altair vega_datasets
-
-      - name: Build the book
-        run: jb build .
-
-      - name: Push to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3.6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/html
