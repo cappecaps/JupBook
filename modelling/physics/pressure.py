@@ -9,18 +9,28 @@ def temperature(altitude):
 
     temperature = T0  
 
-
     # Find the layer corresponding to the altitude
     for i in range(len(base_altitudes) - 1):
         if altitude <= base_altitudes[i+1]:
-            return temperature - lapse_rates[i] * altitude
+            return temperature - lapse_rates[i] * (altitude - base_altitudes[i])
         else:
-            temperature = temperature - lapse_rates[i] * altitude
+            temperature = temperature - lapse_rates[i] * (base_altitudes[i+1]-base_altitudes[i])
 
     # If altitude is above the highest defined layer
     return temperature
 
-print(temperature(0))
-print(temperature(11000))
-    
 
+# Generate altitudes from 0 to 85,000 meters
+altitudes = np.linspace(0, 85000, 500)
+
+# Calculate temperatures for each altitude
+temperatures = [temperature(alt) for alt in altitudes]
+
+# Plot the graph
+plt.rcParams.update({'font.size': 9})
+plt.figure(figsize=(8, 4))
+plt.plot(altitudes, temperatures, color="red",lw=2)
+plt.xlabel("Altitude (m)")
+plt.ylabel("Temperature (K)")
+plt.grid(True)
+plt.show()

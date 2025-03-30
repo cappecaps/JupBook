@@ -33,6 +33,7 @@ project:
         - file: modelling/finance/DCA.md
         - file: modelling/finance/continuous_return.md
         - file: modelling/finance/equally_vs_MC_weighted.md
+        - file: modelling/finance/index_funds.md
     - file: about_me.md
 
   # To autogenerate a Table of Contents, run "jupyter book init --write-toc"

@@ -1,0 +1,1 @@
+%Idea: see how the rise of index funds affects the market
