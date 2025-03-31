@@ -119,9 +119,9 @@ According to the NRLMSIS empirical model, Earth's atmospheric composition remain
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
 $$
-p(h)=p(0)\exp\bigg[-\dfrac{gm_0}{k_B}\int_0^h\dfrac{1}{T(z)}dz\bigg]
+p(h)=p(0)\exp\bigg[-\dfrac{gm}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
 $$(with_lapse)
-
+Where we used the average molar mass $m$ and the gas constant $R$ instead of $m_0$ and $k_B$.
 Now the temperature can be written as the general expression:
 
 $$
@@ -140,6 +140,7 @@ This can be easily calcuated with a simple code. Let's import the packages.
 ```{code-cell} ipython
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.integrate import quad
 ```
 
 ```{code-cell} ipython
@@ -163,18 +164,41 @@ def temperature(altitude):
 ```
 
 ```{code-cell} ipython
-# Generate altitudes from 0 to 85,000 meters
+# Generate altitudes from 0 to 85,000 meters and calculate temperature
 altitudes = np.linspace(0, 85000, 500)
-
-# Calculate temperatures for each altitude
 temperatures = [temperature(alt) for alt in altitudes]
 
-# Plot the graph
 plt.rcParams.update({'font.size': 9})
-plt.figure(figsize=(8, 4))
-plt.plot(altitudes, temperatures, color="red",lw=2)
+plt.figure(figsize=(7, 3))
+plt.plot(altitudes, temperatures, color="darkred",lw=2)
 plt.xlabel("Altitude (m)")
 plt.ylabel("Temperature (K)")
+plt.grid(True)
+plt.show()
+```
+
+
+```{code-cell} ipython
+def pressure(altitude):
+    R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
+    g = 9.80665  # Standard gravity in m/s^2
+    m = 28.9647e-3  # Molar mass of air in kg/mol
+    P0 = 101325  # MSL standard atmospheric pressure in Pa
+
+    integral, _ = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    pressure = P0 * np.exp(-m*g/R * integral)
+
+    return pressure
+```
+
+```{code-cell} ipython
+altitudes = np.linspace(0, 85000, 500)
+pressures = [pressure(alt) for alt in altitudes]
+plt.rcParams.update({'font.size': 9})
+plt.figure(figsize=(8, 4))
+plt.plot(altitudes, pressures, color="black",lw=2)
+plt.xlabel("Altitude (m)")
+plt.ylabel("Pressure (Pa)")
 plt.grid(True)
 plt.show()
 ```
