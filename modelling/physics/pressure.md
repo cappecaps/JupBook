@@ -1,4 +1,10 @@
 ---
+title: Atmospheric pressure
+subtitle: and how it varies with altitude
+short_title: Atmospheric pressure
+subject: Ab-initio modelling
+tags: modelling, atmosphere, earth
+thumbnail: ./logo/suricate_logo.png
 jupytext:
   text_representation:
     extension: .md
@@ -12,13 +18,26 @@ kernelspec:
 ---
 
 
-# Atmospheric pressure and altitude
+:::{warning} Beware scientists!
+:label: abinitio-warning
+Here reported is what I call an **_ab initio_ modelling project**. You will find many mistakes, errors and inaccuracies, because I like to do things by myself, often without looking for solutions or explanations. My projects are the opposite of standing on the shoulder of giants. They are like trying to build my own giant. He's ugly but I love it!
+:::
 
-## Introduction
+%```{embed} #abinitio-warning
+%```
+
+:::{seealso} Preface
+:class: dropdown
+:icon: false
+I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured oustandigly precisely with a smarthphone. It can even detect altitude changes in the order of meters. So I asked myself: is it possibile to compute how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? I also wanted to compute a change in altitude by measuring the change in pressure. I actually tried it with a remarkable precision. Follow me through it and you'll see!
+:::
+
+# Introduction
 
 In this chapter, we will try to find in an ab initio manner how atmospheric pressure and altitude are related to each other. 
 
-## The barometric formula
+(heading-barometric-formula)=
+# The barometric formula
 
 We start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature. From the ideal gas law, the pressure is given by:
 
@@ -65,16 +84,16 @@ $$(barometric_formula)
 We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ its thermal energy. Wait, what? Equation {eq}`barometric_formula` is called barometric formula. The exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in an uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
 
 
-## Adding lapse rate
+# Adding lapse rates
 
 :::{note}
 :class: dropdown
 
-## International Standard Atmosphere
+# International Standard Atmosphere
 
 The International Standard Atmosphere (ISA) is a model that describes how the atmospheric parameters change with altitude. It assumes a constant gravitational field, dry air, and it divides the atmosphere is various layers, with different characteristics.
 
-### Geopotential altitude
+## Geopotential altitude
 
 The vertical distance from the Earth's mean sea level (MSL) is called the **geometric altitude**. In aviation and meteorology, the **geopotential altitude** is used instead, and it is defined as:
 
@@ -89,9 +108,9 @@ More rigorously, denoting Earth's radius with $R$, the geopotential height $h$ i
 $$
 h = \dfrac{R}{R+z}\,z
 $$
-The geopotential altitude is the one that we used in the section [](#the-barometric-formula), where we assumed $g$ constant. We will get rid of this approximation in a later section. 
+The geopotential altitude is the one that we used in the section [](#heading-barometric-formula), where we assumed $g$ constant. We will get rid of this approximation in a later section. 
 
-### Temperature
+## Temperature
 The atmospheric temperature depends on many factors, such as irradiation from Earth's surface, convection, chemical reactions, and interaction with high-energy photons from the Sun. The variation of temperature with altitude is called **lapse rate**, $\Gamma$:
 $$
 \Gamma = -\dfrac{dT}{dh}
@@ -111,7 +130,7 @@ which is valid only at the vicinity of Earth's surface. The ISA provides a set o
 
 There are other layers above, but can be ignored since the atmosphere is extremely rarefied. The ranges are given in geopotential altitude.
 
-### Chemical composition
+## Chemical composition
 According to the NRLMSIS empirical model, Earth's atmospheric composition remains rather constant up to $h=80\ \mathrm{km}$. 
 
 :::
@@ -126,7 +145,7 @@ Now the temperature can be written as the general expression:
 
 $$
 T(h)= T(h_{i}) - \Gamma_i (h-h_{i})
-$$
+$$(T_fromlapse)
 
 with $i$ the atmospheric layer in which $h$ lies, and $h_{i}$ the base altitude of the layer $i$, and that:
 
@@ -134,14 +153,15 @@ $$
 T(h_{i}) = T(0) - \sum_{j=0}^{i-1} \Gamma_j (h_{j+1}-h_{j})
 $$
 
-
-This can be easily calcuated with a simple code. Let's import the packages.
+This however can be easily calcuated with a simple code. Let's import the packages.
 
 ```{code-cell} ipython
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
 ```
+
+
 
 ```{code-cell} ipython
 def temperature(altitude):
@@ -202,3 +222,9 @@ plt.ylabel("Pressure (Pa)")
 plt.grid(True)
 plt.show()
 ```
+
+
+
+# Altitude from pressure
+
+%Take equation T_fromlapse and solve it with T = T(0)-Lz or T(h)-Lh-Lz and rearrange

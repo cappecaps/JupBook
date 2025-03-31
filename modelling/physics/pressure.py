@@ -44,16 +44,25 @@ def pressure(altitude):
     P0 = 101325  # Sea level standard atmospheric pressure in Pa
 
     integral, _ = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    pressure = P0 * np.exp(-m*g/R * integral)
+    pressure = np.exp(-m*g/R * integral)
 
     return pressure
 
+R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
+g = 9.80665  # Standard gravity in m/s^2
+m = 28.9647e-3  # Molar mass of air in kg/mol
+P0 = 101325  # Sea level standard atmospheric pressure in Pa
+T0 = 288.15  # MSL standard temperature in Kelvin
+
 pressures = [pressure(alt) for alt in altitudes]
+barometric_pressure = [np.exp(-m*g*alt/(R*T0) ) for alt in altitudes]
 
 # Plot the graph
-plt.rcParams.update({'font.size': 9})
+plt.rcParams.update({'font.size': 10})
 plt.figure(figsize=(8, 4))
+plt.yscale("log")
 plt.plot(altitudes, pressures, color="black",lw=2)
+plt.plot(altitudes, barometric_pressure, color="blue",lw=2)
 plt.xlabel("Altitude (m)")
 plt.ylabel("Pressure (Pa)")
 plt.grid(True)
