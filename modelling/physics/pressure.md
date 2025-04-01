@@ -2,9 +2,11 @@
 title: Atmospheric pressure
 subtitle: and how it varies with altitude
 short_title: Atmospheric pressure
-subject: Ab-initio modelling
-tags: modelling, atmosphere, earth
-thumbnail: ./logo/suricate_logo.png
+subject: Physics - ab-initio modelling
+tags: 
+    - modelling
+    - atmosphere
+    - earth
 jupytext:
   text_representation:
     extension: .md
@@ -20,7 +22,7 @@ kernelspec:
 
 :::{warning} Beware scientists!
 :label: abinitio-warning
-Here reported is what I call an **_ab initio_ modelling project**. You will find many mistakes, errors and inaccuracies, because I like to do things by myself, often without looking for solutions or explanations. My projects are the opposite of standing on the shoulder of giants. They are like trying to build my own giant. He's ugly but I love it!
+Here reported is an **_ab initio_ modelling** project. You will find many mistakes, errors and inaccuracies, because I like to do things by myself, often without looking for solutions or explanations. My projects are the opposite of standing on the shoulder of giants. They are like trying to build my own giant. He's ugly but I love it!
 :::
 
 %```{embed} #abinitio-warning
