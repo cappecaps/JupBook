@@ -1,6 +1,15 @@
 # About me
 
+%:::{aside}
+%```{image} images/propic.jpg
+%:alt: propic
+%:width: 160px
+%```
+%:::
+
+```{image} images/sittingcat.jpg
+:width: 500px
+```
 
 
-%I am  a PhD student in computational chemistry and astrobiology at Chalmers University of Technology, Sweden.
 
