@@ -91,7 +91,7 @@ We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT
 :::{note}
 :class: dropdown
 
-# International Standard Atmosphere
+# Reference atmospheric models
 
 The International Standard Atmosphere (ISA) is a model that describes how the atmospheric parameters change with altitude. It assumes a constant gravitational field, dry air, and it divides the atmosphere is various layers, with different characteristics.
 
@@ -133,7 +133,22 @@ which is valid only at the vicinity of Earth's surface. The ISA provides a set o
 There are other layers above, but can be ignored since the atmosphere is extremely rarefied. The ranges are given in geopotential altitude.
 
 ## Chemical composition
-According to the NRLMSIS empirical model, Earth's atmospheric composition remains rather constant up to $h=80\ \mathrm{km}$. 
+The composition of the dry atmosphere, i.e. excluding water vapor, is:
+
+```{table} Chemical composition of Earth's dry atmosphere, data from [NOAA](https://www.noaa.gov/jetstream/atmosphere). In the ideal gas approximation, mole fractions and volume fractions are equivalent.
+:label: composition
+:align: center
+| Element | mole fraction |
+| --- | --- |
+| N{sub}`2` | 78.084% |
+| O{sub}`2` | 20.946% |
+| Ar | 0.934% |
+| CO{sub}`2` | 0.042% |
+| Ne | 0.00183% |
+| He | 0.00052% |
+| CH{sub}`4` | 0.00019% |
+```
+Local water vapor molar concentration ranges within 0-4%. According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$.
 
 :::
 
@@ -149,13 +164,7 @@ $$
 T(h)= T(h_{i}) - \Gamma_i (h-h_{i})
 $$(T_fromlapse)
 
-with $i$ the atmospheric layer in which $h$ lies, and $h_{i}$ the base altitude of the layer $i$, and that:
-
-$$
-T(h_{i}) = T(0) - \sum_{j=0}^{i-1} \Gamma_j (h_{j+1}-h_{j})
-$$
-
-This however can be easily calcuated with a simple code. Let's import the packages.
+with $i$ the atmospheric layer in which $h$ lies, and $h_{i}$ the base altitude of the layer $i$. This however can be easily calcuated with a simple code. Let's import the packages.
 
 ```{code-cell} ipython
 import matplotlib.pyplot as plt
@@ -163,7 +172,7 @@ import numpy as np
 from scipy.integrate import quad
 ```
 
-
+and define a function that returns the temperature at a certain altitude, using equation {eq}`T_fromlapse` for each layer.
 
 ```{code-cell} ipython
 def temperature(altitude):
@@ -185,10 +194,14 @@ def temperature(altitude):
     return temperature
 ```
 
+
+
+
 ```{code-cell} ipython
-# Generate altitudes from 0 to 85,000 meters and calculate temperature
-altitudes = np.linspace(0, 85000, 500)
-temperatures = [temperature(alt) for alt in altitudes]
+:tags: ["hide-input"]
+# Generate altitudes from 0 to 85 km and calculate temperature
+altitudes = np.linspace(0, 85, 500)
+temperatures = [temperature(1000*alt) for alt in altitudes]
 
 plt.rcParams.update({'font.size': 9})
 plt.figure(figsize=(7, 3))
@@ -199,6 +212,8 @@ plt.grid(True)
 plt.show()
 ```
 
+Now we can define a function to calculate the pressure, which contains the evaluation of the integral of $1/T$.
+
 
 ```{code-cell} ipython
 def pressure(altitude):
@@ -207,23 +222,36 @@ def pressure(altitude):
     m = 28.9647e-3  # Molar mass of air in kg/mol
     P0 = 101325  # MSL standard atmospheric pressure in Pa
 
-    integral, _ = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    integral, err = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
     pressure = P0 * np.exp(-m*g/R * integral)
 
     return pressure
 ```
 
+This results on a fair estimation of the pressure with altitude.
+
 ```{code-cell} ipython
-altitudes = np.linspace(0, 85000, 500)
-pressures = [pressure(alt) for alt in altitudes]
+:tags: ["hide-input"]
+altitudes = np.linspace(0, 85, 500)
+pressures = [pressure(1000*alt) for alt in altitudes]
 plt.rcParams.update({'font.size': 9})
 plt.figure(figsize=(8, 4))
 plt.plot(altitudes, pressures, color="black",lw=2)
-plt.xlabel("Altitude (m)")
+plt.xlabel("Altitude (km)")
 plt.ylabel("Pressure (Pa)")
 plt.grid(True)
 plt.show()
 ```
+
+# Adding variation of chemical composition 
+
+The atmospheric composition remains roughly constant up to circa 100 km. 
+
+:::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
+:width: 350px
+:::
+
+
 
 
 
