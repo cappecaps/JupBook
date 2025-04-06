@@ -29,7 +29,6 @@ Here reported is an **_ab initio_ modelling** project. You will find many mistak
 %```
 
 :::{seealso} Preface
-:class: dropdown
 :icon: false
 I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured oustandigly precisely with a smarthphone. It can even detect altitude changes in the order of meters. So I asked myself: is it possibile to compute how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? I also wanted to compute a change in altitude by measuring the change in pressure. I actually tried it with a remarkable precision. Follow me through it and you'll see!
 :::
@@ -89,7 +88,6 @@ We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT
 # Adding lapse rates
 
 :::{note}
-:class: dropdown
 
 # Reference atmospheric models
 
@@ -132,6 +130,8 @@ which is valid only at the vicinity of Earth's surface. The ISA provides a set o
 
 There are other layers above, but can be ignored since the atmosphere is extremely rarefied. The ranges are given in geopotential altitude.
 
+
+(subheading-chemical-composition)=
 ## Chemical composition
 The composition of the dry atmosphere, i.e. excluding water vapor, is:
 
@@ -144,10 +144,12 @@ The composition of the dry atmosphere, i.e. excluding water vapor, is:
 | O{sub}`2` | 20.946% |
 | Ar | 0.934% |
 | CO{sub}`2` | 0.042% |
-| Ne | 0.00183% |
+| Ne | 0.00182% |
 | He | 0.00052% |
 | CH{sub}`4` | 0.00019% |
 ```
+Which gives an average molar mass $m = 28.9659 \ \mathrm{g/mol}$. It was shocking to discover that my value differs from the $28.9647\ \mathrm{g/mol}$ value that was calculated not so long ago (in [2004](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html)), when the atmospheric concentration of CO2 was 0.033%. I forced the fractions to sum to $1$, by multiplying them by a factor $k = \frac{1-f_{CO_2}(2025)}{1-f_{CO_2}(2004)}$. 
+
 Local water vapor molar concentration ranges within 0-4%. According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$.
 
 :::
@@ -219,7 +221,7 @@ Now we can define a function to calculate the pressure, which contains the evalu
 def pressure(altitude):
     R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
     g = 9.80665  # Standard gravity in m/s^2
-    m = 28.9647e-3  # Molar mass of air in kg/mol
+    m = 28.9659e-3  # Molar mass of air in kg/mol
     P0 = 101325  # MSL standard atmospheric pressure in Pa
 
     integral, err = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
@@ -245,13 +247,14 @@ plt.show()
 
 # Adding variation of chemical composition 
 
-The atmospheric composition remains roughly constant up to circa 100 km. 
+The value that we calculated in [](subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in detail how such composition changes with altitude. We know that ... 89 km
 
 :::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
 :width: 350px
+ciao
 :::
 
-
+The [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA) provides an enormous quantity of data , that ...
 
 
 
