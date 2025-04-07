@@ -133,24 +133,64 @@ There are other layers above, but can be ignored since the atmosphere is extreme
 
 (subheading-chemical-composition)=
 ## Chemical composition
-The composition of the dry atmosphere, i.e. excluding water vapor, is:
+The composition of the dry atmosphere are kindly provided by the [NOAA](https://www.noaa.gov/jetstream/atmosphere). However, the molar fractions they provide sum to more than one, due to experimental error (as also [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While looking for the most precise values, I noticed some incongruences on the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, as it was published in 2004. The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
+$$
+f_{CO_2}(2004) = 0.033\% &\longrightarrow f_{CO_2}(2025) = 0.042\% \\
+f_{O_2}(2004) = 20.946\% &\longrightarrow f_{O_2}(2025) = 20.937\%
+$$
 
-```{table} Chemical composition of Earth's dry atmosphere, data from [NOAA](https://www.noaa.gov/jetstream/atmosphere). In the ideal gas approximation, mole fractions and volume fractions are equivalent.
+
+```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, mole fractions and volume fractions are equivalent. 
 :label: composition
 :align: center
 | Element | mole fraction |
 | --- | --- |
 | N{sub}`2` | 78.084% |
-| O{sub}`2` | 20.946% |
+| O{sub}`2` | 20.937% |
 | Ar | 0.934% |
 | CO{sub}`2` | 0.042% |
-| Ne | 0.00182% |
-| He | 0.00052% |
-| CH{sub}`4` | 0.00019% |
+| Ne | 18.182 ppm |
+| He | 5.24 ppm |
+| CH{sub}`4` | 1.92 ppm |
+| Kr | 1.14 ppm |
+| H{sub}`2` | 0.55 ppm |
+| N{sub}`2`O | 0.33 ppm |
+| CO | 0.10 ppm |
+| Xe | 0.09 ppm |
+| O{sub}`3`| 0.07 ppm |
+| NO{sub}`2` | 0.02 ppm |
+| I{sub}`2` | 0.01 ppm |
+| other | traces | 
 ```
-Which gives an average molar mass $m = 28.9659 \ \mathrm{g/mol}$. It was shocking to discover that my value differs from the $28.9647\ \mathrm{g/mol}$ value that was calculated not so long ago (in [2004](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html)), when the atmospheric concentration of CO2 was 0.033%. I forced the fractions to sum to $1$, by multiplying them by a factor $k = \frac{1-f_{CO_2}(2025)}{1-f_{CO_2}(2004)}$. 
+Which gives an average molar mass $m = 28.9656\ \mathrm{g/mol}$. The value of $28.9647\ \mathrm{g/mol}$ encountered online refers to the lower level of atmospheric $\mathrm{CO_2}$. Horrifying!
 
-Local water vapor molar concentration ranges within 0-4%. According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$.
+Of course, the atmosphere is never dry. Local concentrations of water vapor range within 0-4%. The molar fractions including humidity are simply given by
+
+$$
+f_{A}^{(hum)}=\big(1-f_{H_2O}\big)\cdot f_{A}^{(dry)}
+$$(f_dry_to_humid)
+
+with $A$ any species.
+```{tip} Quick proof
+:class: dropdown
+In the dry case it holds
+$$
+\sum_A f_{A}^{(dry)} = 1
+$$
+while for humid air
+$$
+f_{H_2O} + \sum_A f_{A}^{(hum)} = 1
+$$
+When water vapor is added to the dry air, all $f_{A}^{(dry)}$ must decrease by the same multiplying factor $k$:
+$$
+f_{H_2O} + k\sum_A f_{A}^{(dry)} &= 1 \\
+f_{H_2O} + k &= 1  \\
+k &= 1-f_{H_2O} 
+$$
+which gives equation {eq}`f_dry_to_humid`.
+```
+
+According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$.
 
 :::
 
