@@ -22,7 +22,7 @@ kernelspec:
 
 :::{warning} Beware scientists!
 :label: abinitio-warning
-Here reported is an **_ab initio_ modelling** project. You will find many mistakes, errors and inaccuracies, because I like to do things by myself, often without looking for solutions or explanations. My projects are the opposite of standing on the shoulder of giants. They are like trying to build my own giant. He's ugly but I love it!
+Here reported is an **_ab initio_ modelling** project. You will find many mistakes, errors and inaccuracies, because I like to do things by myself, often without looking for solutions or explanations. My projects are the opposite of standing on the shoulder of giants. They are like trying to build my own giant, and he's barely alive.
 :::
 
 %```{embed} #abinitio-warning
@@ -30,7 +30,7 @@ Here reported is an **_ab initio_ modelling** project. You will find many mistak
 
 :::{seealso} Preface
 :icon: false
-I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured oustandigly precisely with a smarthphone. It can even detect altitude changes in the order of meters. So I asked myself: is it possibile to compute how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? I also wanted to compute a change in altitude by measuring the change in pressure. I actually tried it with a remarkable precision. Follow me through it and you'll see!
+I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured oustandigly precisely with a smarthphone. It can even detect altitude changes in the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? So that I could estimate a change in altitude by measuring the change in pressure with my phone. And it seems to work rather nicely. Follow me through it and you'll see.
 :::
 
 # Introduction
@@ -162,7 +162,7 @@ $$
 | I{sub}`2` | 0.01 ppm |
 | other | traces | 
 ```
-Which gives an average molar mass $m = 28.9656\ \mathrm{g/mol}$. The value of $28.9647\ \mathrm{g/mol}$ encountered online refers to the lower level of atmospheric $\mathrm{CO_2}$. Horrifying!
+Which gives an average molar mass $m = 28.9656\ \mathrm{g/mol}$. The value of $28.9647\ \mathrm{g/mol}$ encountered online refers to the lower level of atmospheric $\mathrm{CO_2}$. Horrifying! However, my calculation might too rough, or blatantly wrong, I'm not too sure. See the [Scripps FAQ page](https://scrippso2.ucsd.edu/faq.html) for additional information.
 
 Of course, the atmosphere is never dry. Local concentrations of water vapor range within 0-4%. The molar fractions including humidity are simply given by
 
@@ -190,7 +190,8 @@ $$
 which gives equation {eq}`f_dry_to_humid`.
 ```
 
-According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$.
+According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA), Earth's atmospheric composition remains rather constant up to $h\approx 80\ \mathrm{km}$. This is due to diffusion and turbulent convection, which results in a well-mixing of the various gases. This is true up to a certain altitude
+
 
 :::
 
@@ -261,7 +262,7 @@ Now we can define a function to calculate the pressure, which contains the evalu
 def pressure(altitude):
     R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
     g = 9.80665  # Standard gravity in m/s^2
-    m = 28.9659e-3  # Molar mass of air in kg/mol
+    m = 28.9656e-3  # Molar mass of air in kg/mol
     P0 = 101325  # MSL standard atmospheric pressure in Pa
 
     integral, err = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
