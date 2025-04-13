@@ -25,6 +25,7 @@ project:
         - file: modelling/physics/color_from_spectrum.md
         - file: modelling/physics/planet_orbits.md
         - file: modelling/physics/spotlight.md
+        - file: modelling/physics/tools.md
     #- title: Finance
     - file: modelling/finance/intro_finance.md
       children:
