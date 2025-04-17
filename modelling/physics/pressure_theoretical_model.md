@@ -144,7 +144,7 @@ f_{CO_2}(2004) = 0.033\% &\longrightarrow f_{CO_2}(2025) = 0.042\% \\
 f_{O_2}(2004) = 20.946\% &\longrightarrow f_{O_2}(2025) = 20.937\%
 $$
 
-This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2 production is less "efficient", because of the formation of water, among other compounds. 
+This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2$ production is less "efficient", because of the formation of water, among other compounds. 
 
 ```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, mole fractions and volume fractions are equivalent. 
 :label: composition
@@ -168,7 +168,7 @@ This, however, results from the crude approximation that the additional carbon d
 | I{sub}`2` | 0.01 ppm |
 | other | traces | 
 ```
-Which gives an average molar mass $m = 28.9656\ \mathrm{g/mol}$. The value is higher compared to $28.9647\ \mathrm{g/mol}$ encountered online, obtained from a lower level of atmospheric $\mathrm{CO_2}$ of 332 ppm. However, my calculation might be too rough, or blatantly wrong; I'm not too sure. See the [Scripps FAQ page](https://scrippso2.ucsd.edu/faq.html) for additional information.
+Which gives an average molar mass for dry air $m_d = 28.9656\ \mathrm{g/mol}$. The value is higher compared to $28.9647\ \mathrm{g/mol}$ encountered online, obtained from a lower level of atmospheric $\mathrm{CO_2}$ of 332 ppm. However, my calculation might be too rough, or blatantly wrong; I'm not too sure. See the [Scripps FAQ page](https://scrippso2.ucsd.edu/faq.html) for additional information.
 
 Of course, the atmosphere is never dry. Local concentrations of water vapor range from 0% to 4%. The molar fractions, including humidity, are simply given by
 
@@ -201,7 +201,7 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 :::
 
 
-## Temperature change
+## Lapse rates
 
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
@@ -265,7 +265,7 @@ Now we can define a function to calculate the pressure, which contains the evalu
 
 
 ```{code-cell} ipython
-def pressure(altitude):
+def pressure_dry(altitude):
     R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
     g = 9.80665  # Standard gravity in m/s^2
     m = 28.9656e-3  # Molar mass of air in kg/mol
@@ -281,7 +281,7 @@ def pressure(altitude):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 altitudes = np.linspace(0, 85, 500)
-pressures = [pressure(1000*alt) for alt in altitudes]
+pressures = [pressure_dry(1000*alt) for alt in altitudes]
 plt.rcParams.update({'font.size': 9})
 plt.figure(figsize=(8, 4))
 plt.plot(altitudes, pressures, color="black",lw=2)
@@ -334,15 +334,46 @@ In order to account for humidity in our model, we need to calculate $f_{H_2O}$, 
 
 $$
 f_{H_2O}(T) = \dfrac{p_w}{p} = \dfrac{\varphi \cdot p_{vap,w}(T)}{p} 
-$$
+$$(water_molar_frac)
 
 with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) now includes the molar mass of water $m_w$:
 
 $$
-m_m = m_d( 1 - f_w ) + m_w f_w
+m_m(T) = m_d\left( 1 - f_{H_2O}(T) \right) + m_w f_{H_2O}(T)
+$$(moist_molar_mass)
+
+in which we added the subscript "d" for $m$ as in equation {eq}`with_lapse`, to make clear that it refers to dry air. Humidity reduces the average molar mass of a parcel of air, so that it makes the pressure smaller.
+
+Before introducing humidity in our model, we need to make a step further. Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, where we use a "first-order" pressure profile $p_{dry}^{(1)}(h)$ given by equation {eq}`with_lapse`. Since water vapor stays within the troposphere, it is sufficient to include just the first lapse rate $\Gamma_1 = 6.5$ °C/km:
+
+$$
+    p_{dry}^{(1)}(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T_0-\Gamma_1z}dz\bigg]
 $$
 
-in which we added the subscript "d" for $m$ as in equation {eq}`with_lapse`, to make clear that it refers to dry air.
+with $T_0 \equiv T(0)$. The integral can now be solved analytically:
+
+$$
+    \int_0^h\dfrac{1}{T_0-\Gamma_1z}dz = \dfrac{1}{\Gamma_1}\ln\left(\dfrac{T_0}{T_0-\Gamma_1 h}\right)
+$$
+
+So that the pressure becomes:
+$$
+    p_{dry}^{(1)}(h) = p(0)\left(\dfrac{T_0}{T_0 - \Gamma_1 h}\right)^{-\frac{gm_d}{R\Gamma_1}}
+$$
+
+And we have an approximated expression for the molar fraction of water
+
+$$
+f_{H_2O}(h) \approx \dfrac{\varphi \cdot p_{vap,w}(T(h))}{p(0)\left(\dfrac{T_0}{T_0 - \Gamma_1 h}\right)^{-\frac{gm_d}{R\Gamma_1}}} 
+$$(water_molar_frac)
+
+This equation provides an estimation for the vertical profile of $m_m(h)$ through equation {eq}`moist_molar_mass`, which can be rewritten as:
+
+$$
+m_m(h) \approx  m_d  + (m_w - m_d)\varphi \cdot \dfrac{p_{vap,w}(T(h))}{p(0)} \left(1+\dfrac{\Gamma_1 h}{T(h)}\right)^{\frac{gm_d}{R\Gamma_1}} 
+$$
+
+
 
 :::{note}
 ### Sea-level pressure reduction
@@ -366,7 +397,7 @@ Additional refinements can be employed, but they are often empirical and specifi
 
 ## Earth as a spinning spheroid
 
-Let's now further improve our model by considering Earth as a spheroid that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$.
+Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$.
 
 ### Gravity with altitude
 
@@ -385,7 +416,7 @@ $$(g_h)
 where we used the power series. We can call the term $\left(1+h/R\right)^{-2}$ the altitude factor.
 
 
-### Theoretical gravity
+### Reference ellipsoid
 
 We now account more accurately for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
 
@@ -414,7 +445,7 @@ From these parameters are derived:
 The Ellipsoidal Gravity Formula (see <wiki:Theoretical_gravity#Somigliana_equation>) gives the gravitational acceleration depending on the latitude $\varphi$:
 
 $$
-g(\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right]
+g(\phi) = g_e  \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} 
 $$(WGS84)
 
 with $k$ a constant
@@ -436,7 +467,7 @@ $$
 so that we obtain
 
 $$
-g(h,\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right] \dfrac{1}{\left(1+\dfrac{h}{R(\phi)}\right)^2}
+g(h,\phi) = g_e  \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}}\cdot  \dfrac{1}{\left(1+\dfrac{h}{R(\phi)}\right)^2}
 $$(WGS84_h)
 
 Note that the altitude factor is approximate, since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator. Moreover, the factor does not take into account the increase of the centrifugal force with altitude. We can consider such correction negligible.
