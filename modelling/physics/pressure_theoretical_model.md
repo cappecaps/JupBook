@@ -30,7 +30,7 @@ Here reported is an **_ab initio_ modelling** project. You will find many mistak
 
 :::{seealso} Preface
 :icon: false
-I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured outstandingly precisely with a smartphone. It can even detect altitude changes on the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? This way, I could estimate a change in altitude by measuring the change in pressure with my phone. And it seems to work rather nicely. Follow me through it and you'll see.
+I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured outstandingly precisely with a smartphone. It can even detect altitude changes on the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? This way, I could estimate a change in altitude by measuring the change in pressure with my phone. And it works rather nicely!
 :::
 
 # Introduction
@@ -56,7 +56,7 @@ $$
     nk_BT(h) = p(h)=\dfrac{F(h)}{A}
 $$ (pressure_gravfield)
 
-with $F$ the weight of the gas column above $h$, which is given by the integral along the vertical direction $z$ of the mass density $\rho(z)$ of the gas, times the gravity $g(z)$:
+with $F$ the weight of the gas column above $h$. The pressure of the column can also be calculated as the integral along the vertical direction $z$ of the mass density $\rho(z)$ of the gas, times the gravitational acceleration $g(z)$:
 
 $$
 p(h) = \int_h^{+\infty}g(z)\rho(z) dz  = \int_h^{+\infty}g(z)m_0(z)n(z) dz 
@@ -80,7 +80,7 @@ $$
 p(h)=p(0)\exp\bigg[-\dfrac{1}{k_B}\int_0^h\dfrac{g(z)m_0(z)}{T(z)}dz\bigg]
 $$(general_formula)
 
-Where $p(0)$, the pressure at $h=0$, is not known and must be obtained from the observed data. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
+Interestingly, to compute the pressure at a certain altitude $h$ we just need to know how the integrand varies below that point, and not above. This is because the formula assumes we know $p(0)$, the pressure at $h=0$, so that the information of the air column above is implicitly contained there. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. In reality, the sea-level pressure varies continuously and it must be measured. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
 
 $$
 p(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
@@ -138,10 +138,12 @@ There are other layers above, but can be ignored since the atmosphere is extreme
 (subheading-chemical-composition)=
 ### Chemical composition
 The composition of the dry atmosphere is kindly provided by the [NOAA](https://www.noaa.gov/jetstream/atmosphere). However, the molar fractions they provide sum to more than one, due to experimental error (as also [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While looking for the most precise values, I noticed an incongruence in the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: the atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, which is the fraction from circa 50 years ago (in the '70s). The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting the present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
+
 $$
 f_{CO_2}(2004) = 0.033\% &\longrightarrow f_{CO_2}(2025) = 0.042\% \\
 f_{O_2}(2004) = 20.946\% &\longrightarrow f_{O_2}(2025) = 20.937\%
 $$
+
 This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2 production is less "efficient", because of the formation of water, among other compounds. 
 
 ```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, mole fractions and volume fractions are equivalent. 
@@ -275,7 +277,6 @@ def pressure(altitude):
     return pressure
 ```
 
-This results in a very good estimation of the pressure with altitude, especially at lower altitudes. 
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
@@ -290,19 +291,126 @@ plt.grid(True)
 plt.show()
 ```
 
-We can also substitute the lapse rate with the actual data from [atmospheric sounding](wiki:Atmospheric_sounding), if we want to calculate the change in pressure more accurately. For now, we are happy with the standard lapse rate. 
+This results in a very good estimation of the pressure, especially at lower altitudes. As a recap, the model we have built so far works under the following approximations:
+- Ideal gas law
+- Spherical Earth, no spin
+- Constant gravitational field
+- Constant atmospheric composition, dry air
+- Empirical lapse rates
+
+Let's keep improving our model by removing most of them one by one. The most impactful one is arguably dry air: on Earth, air is never completely dry, but some water vapor is mixed with the other gases. In practice, addition of water vapor affects the composition, namely the molar mass $m$ in our model.
+%Furthermore, water droplets and ice crystals can also be encountered, which are clouds. 
+
 
 ## Humidity
+The amount of water vapor in the air is usually measured in relative humidity (RH or $\phi$), which is the fraction of the water vapor in the air relative to the "maximum" potential at that temperature. 
+
+:::{note}
+
+### Relative humidity and water vapor pressure
+
+**Relative humidity** $\phi$ is defined as the ratio between the measured partial pressure of water $p_w$ and its equilibrium (saturation) vapor pressure $p_{vap,w}$:
+
+$$
+\varphi = \dfrac{p_w}{p_{vap,w}}
+$$(relative_humidity)
+
+Note that these terms assume a different meaning in physics and in meteorology. In physics, the **vapor pressure** of a substance is the partial pressure of the gas phase in *equilibrium* with the liquid phase. In meteorology, however, **vapor pressure** refers to the measured partial pressure of water vapor, even when not in equilibrium, whereas the **saturation vapor pressure** is the actual vapor pressure of water, i.e., in equilibrium conditions. This nomenclature comes from the erroneous idea of air dissolving water vapor, eventually reaching a saturation limit. In reality, the vapor pressure of a substance only depends on the liquid-phase temperature, in first approximation. Here, we will try to use the correct physical definitions, albeit minding such incongruences.
+
+The dependence of the vapor pressure of a substance on temperature can be estimated from the Clausius-Clapeyron equation knowing its boiling point $T_b$ at standard pressure $p^\circ$  ($p^\circ$ = 1 atm = 101325 Pa, and $T_b$ = 99.97°C for water)
+
+$$
+p_{vap}(T) = p^\circ \cdot \exp\bigg[{-\dfrac{\Delta_{vap} H}{R}\bigg(\dfrac{1}{T}-\dfrac{1}{T_b}\bigg)}\bigg]
+$$
+
+With $\Delta_{vap} H$ the enthalpy of vaporization. However, this formula lacks of the desired accuracy, because of the numerous approximations that led to it: ideal gas, constant $\Delta_{vap} H$ with temperature, no volume change, etc. This is particularly true for water, which deviates from the ideality due to the strong intermolecular interactions it can establish. For this reason, it is common to use empirical formula. Here, we are going to use the <wiki:Arden_Buck_equation> (where T is in °C, and it returns Pa)
+
+$$
+p_{vap,w}(T) = 611.21\cdot \exp\bigg[{\bigg(18.678-\dfrac{T}{234.5}\bigg)\bigg(\dfrac{T}{257.14+T}\bigg)}\bigg]
+$$
+:::
+
+In order to account for humidity in our model, we need to calculate $f_{H_2O}$, the molar fraction of water in the air, from the relative humidity. Given equation {eq}`relative_humidity`:
+
+$$
+f_{H_2O}(T) = \dfrac{p_w}{p} = \dfrac{\varphi \cdot p_{vap,w}(T)}{p} 
+$$
+
+with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) now includes the molar mass of water $m_w$:
+
+$$
+m_m = m_d( 1 - f_w ) + m_w f_w
+$$
+
+in which we added the subscript "d" for $m$ as in equation {eq}`with_lapse`, to make clear that it refers to dry air.
+
+:::{note}
+### Sea-level pressure reduction
+
+Atmospheric pressure is always reported at the MSL. When a weather station at a certain altitude measures the local pressure, that value is then reduced to the sea level. In other words, the station must estimate the pressure that would be measured if someone digged down to the sea level. This is called **sea-level pressure reduction**, and since no air exists below ground, it is purely hypothetical, so that many assumptions needs to be made. For example, how temperature and humidity would vary going down cannot be properly defined.
+
+The sea-level pressure reduction is carried out by means of the <wiki:hypsometric_equation>:
+
+$$
+p_{MSL} = p_{obs}\cdot \exp\bigg[\frac{m_mgh}{R\overline{T}}\bigg]
+$$
+
+where $h$ is the altitude in which the pressure $p_{obs}$ is measured, $p_{MSL}$ is the pressure at the MSL, and $\overline{T}$ is the mean temperature of the (moist) air with molar mass $m_m$ (I omitted to explain the <wiki:virtual_temperature>, but the formula is equivalent). The hypsometric equation is basically the barometric formula (equation {eq}`barometric_formula`), but with an average temperature across the vertical distance. The average temperature can simply be computed using the standard lapse rate $\Gamma$, and a 12-hour average surface temperature, an attempt to exclude the effect of the irradiation of surface of the Earth:
+$$
+    \overline{T} \approx \dfrac{T_{obs}(t) + T_{obs}(t-12h)}{2} - \Gamma \cdot \dfrac{h}{2}
+$$
+Additional refinements can be employed, but they are often empirical and specific to the station site. Mind that this pressure reduction is fictitious, and it is better to be consistent (across the world) rather than accurate. And I don't like this.
+
+:::
+
+
+## Earth as a spinning spheroid
+
+Let's now further improve our model by considering Earth as a spheroid that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$.
+
+### Gravity with altitude
+
+Our first step is to include the variation of gravity with altitude. According to Newton's law of gravitation:
+
+$$
+g_0(h) = G\dfrac{M}{(R+h)^2}  
+$$
+
+Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded at $h=0$ giving:
+
+$$
+g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n} \dfrac{n+1}{R^n}\, h^n = \dfrac{g_0}{\left(1+h/R\right)^2}
+$$(g_h)
+
+where we used the power series. 
+
+
+### Theoretical gravity
+
+We now account more accurately for Earth's shape. We will use the World Geodetic System 1984 (WGS 84) reference ellipsoid, with equatorial semi-axis $a = R_e = 6378137.0 \ \mathrm{m}$ and polar semi-axis $b = R_p = 6356752.314140 \ \mathrm{m}$, and eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$. From these parameters derive the equatorial gravity $g_e = 9.7803253359\ \mathrm{m/s}^2$ and the polar gravity $g_e = 9.8321849378\ \mathrm{m/s}^2$. The Ellipsoidal Gravity Formula (see <wiki:Theoretical_gravity#Somigliana_equation>) gives the gravitational acceleration depending on the latitude $\varphi$:
+
+$$
+g(\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right]
+$$(WGS84)
+
+with $k$ a constant
+
+$$
+k = \dfrac{R_pg_p-R_eg_e}{R_eg_e} 
+$$
+
+Combining equation {eq}`WGS84` with {eq}`g_h` we obtain:
+
+$$
+g(h,\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right] \cdot \dfrac{1}{\left(1+\frac{h}{R}\right)^2}
+$$(WGS84_h)
+
+### Centrifugal force
 
 
 
-## Gravitational field
+## Measurements 
 
-
-## Earth as a spheroid
-
-
-## Centrifugal force
 
 
 
@@ -340,6 +448,8 @@ Altitude profile of $\mathrm{CO}_2$ molar fraction, in ppm. From [Brown et al. (
 The [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAdEUCGAXG2CWYM6iAjAOykAsArAEykBsADK6wL4gA0ImcB2AK6wkKdHBz4hsEqWZdxEAHYBzKcOJI6zTjwDOggE4AzTAGMYotL37qZSOTu4gAbpkP5MAIziXk6ADkAeXRnNw9vXz1RAG10AEFDdAUQAAlk9FTNFICMkAC6POC8kO50IMKykABZTD09PIAVGDAABxhDHCNNAF0QdiA) provides an enormous quantity of data , that ...
 
 %The model that we have built so far is actually rather accurate, especially if we want to use it at the surface of the Earth, where the atmospheric composition, the gravitational field, and 
+
+%We can also substitute the lapse rate with the actual data from [atmospheric sounding](wiki:Atmospheric_sounding), if we want to calculate the change in pressure more accurately. For now, we are happy with the standard lapse rate. 
 
 
 ## Using sounding data

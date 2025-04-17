@@ -18,7 +18,8 @@ project:
     #- title: Physical modelling
     - file: modelling/physics/intro_physics.md
       children:
-        - file: modelling/physics/pressure.md
+        - file: modelling/physics/pressure_theoretical_model.md
+        - file: modelling/physics/pressure_empirical_model.md
         - file: modelling/physics/sun_position.md
         - file: modelling/physics/UV_index.md
         - file: modelling/physics/radiation.md
