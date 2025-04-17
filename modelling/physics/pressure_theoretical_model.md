@@ -376,13 +376,13 @@ $$
 g_0(h) = G\dfrac{M}{(R+h)^2}  
 $$
 
-Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded at $h=0$ giving:
+Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded at $h=0$:
 
 $$
-g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n}\left(n+1\right) \dfrac{h^n}{R^n}= \dfrac{g_0}{\left(1+h/R\right)^2}
+g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n}\left(n+1\right) \dfrac{h^n}{R^n}= \dfrac{g_0}{\left(1+\dfrac{h}{R}\right)^2}
 $$(g_h)
 
-where we used the power series. 
+where we used the power series. We can call the term $\left(1+h/R\right)^{-2}$ the altitude factor.
 
 
 ### Theoretical gravity
@@ -393,12 +393,21 @@ We now account more accurately for Earth's shape. We will use the World Geodetic
 
 ### World Geodetic System 1984
 
-World Geodetic System 1984 describes Earth as a reference ellipsoid with
-- equatorial semi-axis $a = R_e = 6378137.0 \ \mathrm{m}$
-- polar semi-axis $b = R_p = 6356752.314140 \ \mathrm{m}$
-- eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$
+World Geodetic System 1984 describes Earth as a reference ellipsoid with the following parameters
 
-From these parameters it derive
+```{table} Earth's parameters as defined by the WGS84 model.
+:label: composition
+:align: center
+| Parameter | Symbol | Value |
+| --- | --- | --- |
+| equatorial semi-axis | $a$ or $R_e$ | $6378137.0 \ \mathrm{m}$ |
+| polar semi-axis | $b$ or $R_p$ | $\approx 6356752.314140 \ \mathrm{m}$ |
+| gravitational constant | $GM$ | $3.986004418\cdot 10^{-14}\ \mathrm{m^3/s^2}$ |
+| angular velocity | $\omega$ | $72.92115\cdot10^{-6}\ \mathrm{rad/s}$ |
+```
+
+From these parameters are derived:
+- eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$
 - equatorial gravity $g_e = 9.7803253359\ \mathrm{m/s}^2$ 
 - polar gravity $g_e = 9.8321849378\ \mathrm{m/s}^2$
 
@@ -414,11 +423,9 @@ $$
 k = \dfrac{R_pg_p-R_eg_e}{R_eg_e} 
 $$
 
-This model may also include centrifugal acceleration and other smaller effects, but I'm not sure whether equation {eq}`WGS84` does. 
-
 :::
 
-As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modelling is too complicate (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's the better than any model I could devise. 
+As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modelling is too complicate (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
 
 We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius the WGS84 ellipsoid is:
 
@@ -432,20 +439,13 @@ $$
 g(h,\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right] \dfrac{1}{\left(1+\dfrac{h}{R(\phi)}\right)^2}
 $$(WGS84_h)
 
-Note that my addition is approximate, since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator.  
+Note that the altitude factor is approximate, since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator. Moreover, the factor does not take into account the increase of the centrifugal force with altitude. We can consider such correction negligible.
 
-:::{image} https://upload.wikimedia.org/wikipedia/commons/8/8f/Geodetic_coordinates.svg
 
+:::{figure} https://upload.wikimedia.org/wikipedia/commons/8/8f/Geodetic_coordinates.svg
+Exaggerated representation of an ellipsoid and the <wiki:vertical_deflection>.
 :::
-
-Mind that we are also excluding the atmosphere itself.
-
-### Centrifugal force
-
-
-
-## Measurements 
-
+ 
 
 
 
