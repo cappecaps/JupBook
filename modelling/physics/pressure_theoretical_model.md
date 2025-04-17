@@ -50,7 +50,7 @@ $$
     p=nk_BT
 $$ (idealgas)
 
-where $n$ the numerical density of the gas, and $T$ its temperature. To model Earth’s atmosphere, we imagine an infinitely high column of gas subjected to Earth's gravitational field. For now, we assume that Earth is spherically symmetric. The pressure of the gas at a certain altitude $h$ must be equivalent to the pressure exerted by the column of gas above it, due to the gravitational field, i.e.:
+where $n$ the numerical density of the gas, and $T$ its temperature. To model Earth’s atmosphere, we imagine an infinitely high column of gas subjected to Earth's gravitational field. For now, we assume that Earth is spherically symmetric. We also assume that the mass of the atmosphere is negligible, so that there is no self-interaction, which would make the problem not analytically solvable. The pressure of the gas at a certain altitude $h$ must be equivalent to the pressure exerted by the column of gas above it, due to the gravitational field, i.e.:
 
 $$
     nk_BT(h) = p(h)=\dfrac{F(h)}{A}
@@ -379,7 +379,7 @@ $$
 Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded at $h=0$ giving:
 
 $$
-g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n} \dfrac{n+1}{R^n}\, h^n = \dfrac{g_0}{\left(1+h/R\right)^2}
+g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n}\left(n+1\right) \dfrac{h^n}{R^n}= \dfrac{g_0}{\left(1+h/R\right)^2}
 $$(g_h)
 
 where we used the power series. 
@@ -387,7 +387,22 @@ where we used the power series.
 
 ### Theoretical gravity
 
-We now account more accurately for Earth's shape. We will use the World Geodetic System 1984 (WGS 84) reference ellipsoid, with equatorial semi-axis $a = R_e = 6378137.0 \ \mathrm{m}$ and polar semi-axis $b = R_p = 6356752.314140 \ \mathrm{m}$, and eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$. From these parameters derive the equatorial gravity $g_e = 9.7803253359\ \mathrm{m/s}^2$ and the polar gravity $g_e = 9.8321849378\ \mathrm{m/s}^2$. The Ellipsoidal Gravity Formula (see <wiki:Theoretical_gravity#Somigliana_equation>) gives the gravitational acceleration depending on the latitude $\varphi$:
+We now account more accurately for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
+
+:::{note}
+
+### World Geodetic System 1984
+
+World Geodetic System 1984 describes Earth as a reference ellipsoid with
+- equatorial semi-axis $a = R_e = 6378137.0 \ \mathrm{m}$
+- polar semi-axis $b = R_p = 6356752.314140 \ \mathrm{m}$
+- eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$
+
+From these parameters it derive
+- equatorial gravity $g_e = 9.7803253359\ \mathrm{m/s}^2$ 
+- polar gravity $g_e = 9.8321849378\ \mathrm{m/s}^2$
+
+The Ellipsoidal Gravity Formula (see <wiki:Theoretical_gravity#Somigliana_equation>) gives the gravitational acceleration depending on the latitude $\varphi$:
 
 $$
 g(\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right]
@@ -399,11 +414,31 @@ $$
 k = \dfrac{R_pg_p-R_eg_e}{R_eg_e} 
 $$
 
-Combining equation {eq}`WGS84` with {eq}`g_h` we obtain:
+This model may also include centrifugal acceleration and other smaller effects, but I'm not sure whether equation {eq}`WGS84` does. 
+
+:::
+
+As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modelling is too complicate (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's the better than any model I could devise. 
+
+We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius the WGS84 ellipsoid is:
 
 $$
-g(h,\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right] \cdot \dfrac{1}{\left(1+\frac{h}{R}\right)^2}
+R(\phi) = \dfrac{R_eR_p}{\sqrt{\left(R_p\cos(\phi)\right)^2+\left(R_e\sin(\phi)\right)^2}}
+$$
+
+so that we obtain
+
+$$
+g(h,\phi) = g_e \left[ \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} \right] \dfrac{1}{\left(1+\dfrac{h}{R(\phi)}\right)^2}
 $$(WGS84_h)
+
+Note that my addition is approximate, since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator.  
+
+:::{image} https://upload.wikimedia.org/wikipedia/commons/8/8f/Geodetic_coordinates.svg
+
+:::
+
+Mind that we are also excluding the atmosphere itself.
 
 ### Centrifugal force
 
