@@ -126,7 +126,7 @@ $$
 which is valid only at the vicinity of Earth's surface. The ISA provides a set of empirical lapse rates for each atmospheric layer. Starting from a temperature of 15°C (288.15 K) at MSL:
 1. **Troposphere** (0-11 km): 6.5 °C/km
 2. **Tropopause** (11-20 km): 0.0 °C/km
-3. **Stratosphere** (20-32 km): 1.0 °C/km
+3. **Stratosphere** (20-32 km): -1.0 °C/km
 4. **Stratosphere** (32-47 km): -2.8 °C/km
 5. **Stratopause** (47-51 km): 0.0 °C/km
 6. **Mesosphere** (51-71 km): 2.8 °C/km
@@ -140,8 +140,10 @@ There are other layers above, but can be ignored since the atmosphere is extreme
 The composition of the dry atmosphere is kindly provided by the [NOAA](https://www.noaa.gov/jetstream/atmosphere). However, the molar fractions they provide sum to more than one, due to experimental error (as also [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While looking for the most precise values, I noticed an incongruence in the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: the atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, which is the fraction from circa 50 years ago (in the '70s). The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting the present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
 
 $$
+\begin{aligned}
 f_{CO_2}(2004) = 0.033\% &\longrightarrow f_{CO_2}(2025) = 0.042\% \\
 f_{O_2}(2004) = 20.946\% &\longrightarrow f_{O_2}(2025) = 20.937\%
+\end{aligned}
 $$
 
 This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2$ production is less "efficient", because of the formation of water, among other compounds. 
@@ -180,18 +182,25 @@ with $A$ any species.
 ```{tip} Quick proof
 :class: dropdown
 In the dry case it holds
+
 $$
 \sum_A f_{A}^{(dry)} = 1
 $$
+
 while for humid air
+
 $$
 f_{H_2O} + \sum_A f_{A}^{(hum)} = 1
 $$
+
 When water vapor is added to the dry air, all $f_{A}^{(dry)}$ must decrease by the same multiplying factor $k$:
+
 $$
+\begin{aligned}
 f_{H_2O} + k\sum_A f_{A}^{(dry)} &= 1 \\
 f_{H_2O} + k &= 1  \\
 k &= 1-f_{H_2O} 
+\end{aligned}
 $$
 which gives equation {eq}`f_dry_to_humid`.
 ```
@@ -206,9 +215,9 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
 $$
-p(h)=p(0)\exp\bigg[-\dfrac{gm}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
+p(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
 $$(with_lapse)
-Where we used the average molar mass $m$ and the gas constant $R$ instead of $m_0$ and $k_B$.
+Where we used the average molar mass of dry air $m_d$ and the gas constant $R$ instead of $m_0$ and $k_B$.
 Now the temperature can be written as the general expression:
 
 $$
@@ -223,12 +232,21 @@ import numpy as np
 from scipy.integrate import quad
 ```
 
+define the global variables that we're going to use across this article
+
+```{code-cell} ipython
+    R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
+    g0 = 9.80665  # Standard gravity in m/s^2
+    m_dry = 28.9656e-3  # Molar mass of air in kg/mol
+    T0 = 288.15  # MSL standard temperature in Kelvin
+    p0 = 101325  # MSL standard atmospheric pressure in Pa
+```
+
 and define a function that returns the temperature at a certain altitude, using equation {eq}`T_fromlapse` for each layer.
 
 ```{code-cell} ipython
 def temperature(altitude):
     # Define base altitudes and temperatures for each layer
-    T0= 288.15  # MSL standard temperature in Kelvin
     base_altitudes = [0, 11000, 20000, 32000, 47000, 51000, 71000, 84852]
     lapse_rates = [0.0065, 0.0, -0.001, -0.0028, 0.0, 0.0028, 0.002, 0.0]
 
@@ -265,14 +283,14 @@ Now we can define a function to calculate the pressure, which contains the evalu
 
 
 ```{code-cell} ipython
-def pressure_dry(altitude):
-    R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
-    g = 9.80665  # Standard gravity in m/s^2
-    m = 28.9656e-3  # Molar mass of air in kg/mol
-    P0 = 101325  # MSL standard atmospheric pressure in Pa
+def pressure_barometric(altitude):
+    pressure = p0 * np.exp(-m_dry * g0 * altitude / (R * T0))
 
+    return pressure
+
+def pressure_dry(altitude):
     integral, err = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    pressure = P0 * np.exp(-m*g/R * integral)
+    pressure = p0 * np.exp(-m_dry * g0 / R * integral)
 
     return pressure
 ```
@@ -280,18 +298,20 @@ def pressure_dry(altitude):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 85, 500)
-pressures = [pressure_dry(1000*alt) for alt in altitudes]
-plt.rcParams.update({'font.size': 9})
+altitudes = np.linspace(0, 85, 500)     # altitude array in km
+pressure_dry_arr = [pressure_dry(1000*alt)/1000 for alt in altitudes]   # divided by 1000 to return hPa
+pressure_barom_arr = [pressure_barometric(1000*alt)/1000 for alt in altitudes]
+plt.rcParams.update({'font.size': 10})
 plt.figure(figsize=(8, 4))
-plt.plot(altitudes, pressures, color="black",lw=2)
+plt.plot(altitudes, pressure_dry_arr, color='k',lw=2,label='with lapse rates')
+plt.plot(altitudes, pressure_barom_arr, linestyle='dashed', color='c',lw=2, label='barometric approx.')
 plt.xlabel("Altitude (km)")
-plt.ylabel("Pressure (Pa)")
-plt.grid(True)
+plt.ylabel("Pressure (hPa)")
+plt.legend()
 plt.show()
 ```
 
-This results in a very good estimation of the pressure, especially at lower altitudes. As a recap, the model we have built so far works under the following approximations:
+This results in a very good estimation of the pressure, especially at lower altitudes. As a recap, our model has so far been built within the following approximations:
 - Ideal gas law
 - Spherical Earth, no spin
 - Constant gravitational field
@@ -304,6 +324,9 @@ Let's keep improving our model by removing most of them one by one. The most imp
 
 ## Humidity
 The amount of water vapor in the air is usually measured in relative humidity (RH or $\phi$), which is the fraction of the water vapor in the air relative to the "maximum" potential at that temperature. 
+
+
+### From relative humidity
 
 :::{note}
 
@@ -323,57 +346,120 @@ $$
 p_{vap}(T) = p^\circ \cdot \exp\bigg[{-\dfrac{\Delta_{vap} H}{R}\bigg(\dfrac{1}{T}-\dfrac{1}{T_b}\bigg)}\bigg]
 $$
 
-With $\Delta_{vap} H$ the enthalpy of vaporization. However, this formula lacks of the desired accuracy, because of the numerous approximations that led to it: ideal gas, constant $\Delta_{vap} H$ with temperature, no volume change, etc. This is particularly true for water, which deviates from the ideality due to the strong intermolecular interactions it can establish. For this reason, it is common to use empirical formula. Here, we are going to use the <wiki:Arden_Buck_equation> (where T is in °C, and it returns Pa)
+With $\Delta_{vap} H$ the enthalpy of vaporization. However, this formula lacks of the desired accuracy, because of the numerous approximations that led to it: ideal gas, constant $\Delta_{vap} H$ with temperature, no volume change, etc. This is particularly true for water, which deviates from the ideality due to the strong intermolecular interactions it can establish. For this reason, it is common to use empirical formula. Here, we are going to use the <wiki:Tetens_equation> (where T is in °C, and it returns Pa)
 
 $$
-p_{vap,w}(T) = 611.21\cdot \exp\bigg[{\bigg(18.678-\dfrac{T}{234.5}\bigg)\bigg(\dfrac{T}{257.14+T}\bigg)}\bigg]
+p_{vap,w}(T) = 610.78\cdot \exp\bigg[\dfrac{17.27T}{T+237.3}\bigg]
 $$
+
+```{code-cell} ipython
+def vapor_pressure(T):
+    # Tetens equation
+    A = 610.78
+    B = 17.27
+    C = 237.3  
+    p_vap = A * np.exp((B * (T - 273.15)) / (T - 273.15 + C))   
+    return p_vap
+```
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+T_array = np.linspace(0, 100, 100)  # Temperature range from 0 to 100 °C
+vapor_pressure_array = [vapor_pressure(T+273.15)/100 for T in T_array]
+p0_array = [p0/100 for T in T_array]
+
+plt.figure(figsize=(7, 3))
+plt.plot(T_array, vapor_pressure_array, color="darkblue",lw=2,label=r'$p_{vap,w}$')
+plt.plot(T_array, p0_array,linestyle='dashed',color="k",lw=2,label=r'$p\!^\circ$')
+plt.xlim(0,100)
+plt.xlabel("Temperature (°C)")
+plt.ylabel("Pressure (hPa)")
+plt.legend()
+plt.show()
+```
+
 :::
 
 In order to account for humidity in our model, we need to calculate $f_{H_2O}$, the molar fraction of water in the air, from the relative humidity. Given equation {eq}`relative_humidity`:
 
 $$
-f_{H_2O}(T) = \dfrac{p_w}{p} = \dfrac{\varphi \cdot p_{vap,w}(T)}{p} 
+f_{H_2O}(p,T) = \dfrac{p_w}{p} = \dfrac{\varphi \cdot p_{vap,w}(T)}{p} 
 $$(water_molar_frac)
 
 with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) now includes the molar mass of water $m_w$:
 
 $$
-m_m(T) = m_d\left( 1 - f_{H_2O}(T) \right) + m_w f_{H_2O}(T)
+m_m(p,T) = m_d\left( 1 - f_{H_2O}(p,T) \right) + m_w f_{H_2O}(p,T) =  m_d  + (m_w - m_d)f_{H_2O}(p,T)
 $$(moist_molar_mass)
 
-in which we added the subscript "d" for $m$ as in equation {eq}`with_lapse`, to make clear that it refers to dry air. Humidity reduces the average molar mass of a parcel of air, so that it makes the pressure smaller.
+Water has a smaller mass compared to the other major species in the air, therefore humidity reduces the average molar mass of a parcel of air, making the atmospheric pressure smaller.
 
-Before introducing humidity in our model, we need to make a step further. Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, where we use a "first-order" pressure profile $p_{dry}^{(1)}(h)$ given by equation {eq}`with_lapse`. Since water vapor stays within the troposphere, it is sufficient to include just the first lapse rate $\Gamma_1 = 6.5$ °C/km:
-
-$$
-    p_{dry}^{(1)}(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T_0-\Gamma_1z}dz\bigg]
-$$
-
-with $T_0 \equiv T(0)$. The integral can now be solved analytically:
+Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air $m_m$, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, that is using a "zeroth-order" dry-air pressure profile $p_{bar}(h)$ from the **barometric formula** (equation {eq}`barometric_formula`) instead of the real $p_{moist}(h)$. 
 
 $$
-    \int_0^h\dfrac{1}{T_0-\Gamma_1z}dz = \dfrac{1}{\Gamma_1}\ln\left(\dfrac{T_0}{T_0-\Gamma_1 h}\right)
+\begin{cases}
+f_{H_2O}(h) \approx  \varphi(h) \cdot \dfrac{p_{vap,w}(T(h))}{p_{bar}(h)} \\[15pt]
+p_{vap,w}(T(h)) = 610.78\cdot e^{17.27(T(h)+273.15)/(T(h)+35.85)} \\[10pt]
+p_{bar}(h) = p(0)e^{-gm_dh/(RT_0)}
+\end{cases}
+$$(water_molar_frac_baro)
+
+where we allowed the relative humidity to vary with altitude. This approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is minimal. If such information doesn't sound right, note that this doesn't mean that water does not alter the pressure at all. It is the presence of condensed-phase water (clouds) that greatly affects the atmospheric pressure, and it does so by locally occupying a much greater fraction of volume of atmosphere. We will return on clouds soon. Let's compute how the water fraction varies with altitude, assuming that the relative humidity from the stratosphere upward is zero. 
+
+
+```{code-cell} ipython
+def water_molar_fraction(altitude,RH):
+    if altitude > 20000:
+        return 0.0
+
+    T = temperature(altitude)
+    p_vap = vapor_pressure(T)
+    p_barom = pressure_barometric(altitude)
+
+    # partial pressure of water vapor
+    p_water = RH * p_vap
+
+    # molar fraction of water vapor
+    f_water = p_water / p_barom
+
+    return f_water
+```
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+
+RHs = [ 0.25, 0.50, 0.75, 1.0]
+f_water_RHs = [[water_molar_fraction(1000*alt,RH) for alt in altitudes] for RH in RHs]
+plt.figure(figsize=(7, 3))
+for idx,RH in enumerate(RHs):
+    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}')
+plt.ylim(0,20)
+plt.xlabel("Altitude (km)")
+plt.ylabel("Water vapor molar fraction")
+plt.legend()
+plt.show()
+```
+
+Finally, combining the system in {eq}`water_molar_frac_baro` with equation {eq}`moist_molar_mass` we have:
+
+$$
+m_m(h) \approx  m_d  + (m_w - m_d)\varphi(h)  \dfrac{610.78}{p(0)}  \exp\left[\dfrac{17.27(T(h)+273.15)}{T(h)+35.85}+\dfrac{gm_dh}{RT_0}\right]
 $$
 
-So that the pressure becomes:
-$$
-    p_{dry}^{(1)}(h) = p(0)\left(\dfrac{T_0}{T_0 - \Gamma_1 h}\right)^{-\frac{gm_d}{R\Gamma_1}}
-$$
-
-And we have an approximated expression for the molar fraction of water
+and finally:
 
 $$
-f_{H_2O}(h) \approx \dfrac{\varphi \cdot p_{vap,w}(T(h))}{p(0)\left(\dfrac{T_0}{T_0 - \Gamma_1 h}\right)^{-\frac{gm_d}{R\Gamma_1}}} 
-$$(water_molar_frac)
-
-This equation provides an estimation for the vertical profile of $m_m(h)$ through equation {eq}`moist_molar_mass`, which can be rewritten as:
-
-$$
-m_m(h) \approx  m_d  + (m_w - m_d)\varphi \cdot \dfrac{p_{vap,w}(T(h))}{p(0)} \left(1+\dfrac{\Gamma_1 h}{T(h)}\right)^{\frac{gm_d}{R\Gamma_1}} 
-$$
+p_{moist}(h)\approx p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(h)}{T(z)}dz\bigg]
+$$(p_moist)
 
 
+%grafico di m_m(T) anche prima!
+%E grafico con f_h2o or sum
+
+
+### From dew point 
+
+aa
 
 :::{note}
 ### Sea-level pressure reduction
@@ -427,7 +513,7 @@ We now account more accurately for Earth's shape. We will use the World Geodetic
 World Geodetic System 1984 describes Earth as a reference ellipsoid with the following parameters
 
 ```{table} Earth's parameters as defined by the WGS84 model.
-:label: composition
+:label: WGS84_data
 :align: center
 | Parameter | Symbol | Value |
 | --- | --- | --- |
@@ -490,7 +576,7 @@ Exaggerated representation of an ellipsoid and the <wiki:vertical_deflection>.
 
 ## The NRLMSIS model
 
-The value that we calculated in [](subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition rather constant up to 80 km ([](#composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km. 
+The value that we calculated in [](#subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition rather constant up to 80 km ([](#composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km. 
 
 :::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
 :label: composition-altitude
