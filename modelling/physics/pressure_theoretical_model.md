@@ -83,10 +83,10 @@ $$(general_formula)
 Interestingly, to compute the pressure at a certain altitude $h$ we just need to know how the integrand varies below that point, and not above. This is because the formula assumes we know $p(0)$, the pressure at $h=0$, so that the information of the air column above is implicitly contained there. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. In reality, the sea-level pressure varies continuously and it must be measured. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
 
 $$
-p(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
+p_{bar}(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
 $$(barometric_formula)
 
-We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ as its thermal energy. Wait, what? Equation {eq}`barometric_formula` is called the barometric formula. The exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of the system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in a uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
+We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ as its thermal energy. Wait, what? Equation {eq}`barometric_formula` is called the **barometric formula**. The exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of the system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in a uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
 
 
 ## Empirical interlude: Earth's atmosphere 
@@ -114,6 +114,7 @@ h = \dfrac{R}{R+z}\,z
 $$
 The geopotential altitude is the one that we used in the section [](#heading-barometric-formula), where we assumed $g$ constant. We will get rid of this approximation in a later section. 
 
+(ISA_temp)=
 ### Temperature
 The atmospheric temperature depends on many factors, such as irradiation from Earth's surface, convection, chemical reactions, and interaction with high-energy photons from the Sun. The variation of temperature with altitude is called **lapse rate**, $\Gamma$:
 $$
@@ -215,7 +216,7 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
 $$
-p(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
+p_{dry}(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
 $$(with_lapse)
 Where we used the average molar mass of dry air $m_d$ and the gas constant $R$ instead of $m_0$ and $k_B$.
 Now the temperature can be written as the general expression:
@@ -389,7 +390,10 @@ $$(water_molar_frac)
 with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) now includes the molar mass of water $m_w$:
 
 $$
-m_m(p,T) = m_d\left( 1 - f_{H_2O}(p,T) \right) + m_w f_{H_2O}(p,T) =  m_d  + (m_w - m_d)f_{H_2O}(p,T)
+\begin{align}
+m_m(p,T) &= m_d\big( 1 - f_{H_2O}(p,T) \big) + m_w f_{H_2O}(p,T) \\[5pt]
+         &=  m_d  + (m_w - m_d) \cdot f_{H_2O}(p,T)
+\end{align}
 $$(moist_molar_mass)
 
 Water has a smaller mass compared to the other major species in the air, therefore humidity reduces the average molar mass of a parcel of air, making the atmospheric pressure smaller.
@@ -404,17 +408,22 @@ p_{bar}(h) = p(0)e^{-gm_dh/(RT_0)}
 \end{cases}
 $$(water_molar_frac_baro)
 
-where we allowed the relative humidity to vary with altitude. This approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is minimal. If such information doesn't sound right, note that this doesn't mean that water does not alter the pressure at all. It is the presence of condensed-phase water (clouds) that greatly affects the atmospheric pressure, and it does so by locally occupying a much greater fraction of volume of atmosphere. We will return on clouds soon. Let's compute how the water fraction varies with altitude, assuming that the relative humidity from the stratosphere upward is zero. 
+where we allowed the relative humidity to vary with altitude. This approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is minimal. If such information doesn't sound right, note that this doesn't mean that water does not alter the pressure at all. It is the presence of condensed-phase water (clouds) that greatly affects the atmospheric pressure, and it does so by locally occupying a much greater fraction of volume of atmosphere. We will later return on clouds. 
 
+Let's built a function to compute $f_{H_2O}$ depending on relative humidity and either temperature or altitude (from the barometric formula). 
 
 ```{code-cell} ipython
-def water_molar_fraction(altitude,RH):
-    if altitude > 20000:
-        return 0.0
+def water_molar_fraction(RH,T=None,h=None):
+    if h is not None:
+        if h > 20000:
+            return 0.0
+        T = temperature(h)
+        p_barom = pressure_barometric(h)
+    
+    else:
+        p_barom = p0
 
-    T = temperature(altitude)
     p_vap = vapor_pressure(T)
-    p_barom = pressure_barometric(altitude)
 
     # partial pressure of water vapor
     p_water = RH * p_vap
@@ -425,36 +434,54 @@ def water_molar_fraction(altitude,RH):
     return f_water
 ```
 
+Assuming a constant relative humidity with altitude, we can observe how the molar fraction of water in the air varies with temperature:
+
 ```{code-cell} ipython
 :tags: ["hide-input"]
 
-RHs = [ 0.25, 0.50, 0.75, 1.0]
-f_water_RHs = [[water_molar_fraction(1000*alt,RH) for alt in altitudes] for RH in RHs]
+RHs = [0.25, 0.50, 0.75, 1.0]
+f_water_RHs = [[water_molar_fraction(RH=RH,T=T+273.15)*100 for T in T_array] for RH in RHs]
 plt.figure(figsize=(7, 3))
+cmap = plt.get_cmap('coolwarm')
+colors = cmap(np.linspace(0, 1, len(RHs)))
 for idx,RH in enumerate(RHs):
-    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}')
-plt.ylim(0,20)
-plt.xlabel("Altitude (km)")
-plt.ylabel("Water vapor molar fraction")
+    plt.plot(T_array, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
+plt.xlim(0,40)
+plt.ylim(0,8)
+plt.xlabel("Temperature (°C)")
+plt.ylabel("Water vapor molar fraction (%)")
 plt.legend()
 plt.show()
 ```
 
-Finally, combining the system in {eq}`water_molar_frac_baro` with equation {eq}`moist_molar_mass` we have:
+and it makes sense that $f_{H_2O}$ never exceeds 5\% on Earth. Taking the temperatures from [ISA](#ISA_temp) (15°C at the surface), we can see that the fraction of water decreases exponentially with altitude:
+
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+
+f_water_RHs = [[water_molar_fraction(RH=RH,h=1000*alt)*100 for alt in altitudes] for RH in RHs]
+plt.figure(figsize=(7, 3))
+for idx,RH in enumerate(RHs):
+    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
+plt.xlim(0,15)
+plt.xlabel("Altitude (km)")
+plt.ylabel("Water vapor molar fraction (%)")
+plt.legend()
+plt.show()
+```
+
+We finally reach an expression for the atmospheric pressure with moist air
 
 $$
-m_m(h) \approx  m_d  + (m_w - m_d)\varphi(h)  \dfrac{610.78}{p(0)}  \exp\left[\dfrac{17.27(T(h)+273.15)}{T(h)+35.85}+\dfrac{gm_dh}{RT_0}\right]
-$$
-
-and finally:
-
-$$
-p_{moist}(h)\approx p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(h)}{T(z)}dz\bigg]
+p_{moist}(h)\approx p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
 $$(p_moist)
 
+Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on $z$ (equation {eq}`moist_molar_mass`). We can therefore split the integral into two terms, and we find back the expression for $p_{dry}(h)$, equation {eq}`with_lapse`:
 
-%grafico di m_m(T) anche prima!
-%E grafico con f_h2o or sum
+$$
+p_{moist}(h)\approx p_{dry}(h)\cdot\exp\bigg[-\dfrac{g}{R}(m_w - m_d)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg]
+$$(p_moist)
 
 
 ### From dew point 
