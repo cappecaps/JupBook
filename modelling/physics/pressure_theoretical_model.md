@@ -60,7 +60,7 @@ with $F$ the weight of the gas column above $h$. The pressure of the column can 
 
 $$
 p(h) = \int_h^{+\infty}g(z)\rho(z) dz  = \int_h^{+\infty}g(z)m_0(z)n(z) dz 
-$$
+$$(pressure_h)
 
 where we expressed the mass density $\rho$ as the product of the average mass of the gas particle, $m_0$, and the numerical density, $n$. We can rearrange and convert the equation in its differential form, knowing that $n(+\infty)=0$:
 
@@ -239,6 +239,7 @@ define the global variables that we're going to use across this article
     R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
     g0 = 9.80665  # Standard gravity in m/s^2
     m_dry = 28.9656e-3  # Molar mass of air in kg/mol
+    m_water = 18.01528e-3  # Molar mass of water in kg/mol
     T0 = 288.15  # MSL standard temperature in Kelvin
     p0 = 101325  # MSL standard atmospheric pressure in Pa
 ```
@@ -284,13 +285,13 @@ Now we can define a function to calculate the pressure, which contains the evalu
 
 
 ```{code-cell} ipython
-def pressure_barometric(altitude):
-    pressure = p0 * np.exp(-m_dry * g0 * altitude / (R * T0))
+def pressure_barometric(h):
+    pressure = p0 * np.exp(-m_dry * g0 * h / (R * T0))
 
     return pressure
 
-def pressure_dry(altitude):
-    integral, err = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+def pressure_dry(h):
+    integral, err = quad(lambda h: 1 / temperature(h), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
     pressure = p0 * np.exp(-m_dry * g0 / R * integral)
 
     return pressure
@@ -300,8 +301,8 @@ def pressure_dry(altitude):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 altitudes = np.linspace(0, 85, 500)     # altitude array in km
-pressure_dry_arr = [pressure_dry(1000*alt)/1000 for alt in altitudes]   # divided by 1000 to return hPa
-pressure_barom_arr = [pressure_barometric(1000*alt)/1000 for alt in altitudes]
+pressure_dry_arr = np.array([pressure_dry(1000*alt)/100 for alt in altitudes])   # divided by 100 to return hPa
+pressure_barom_arr = np.array([pressure_barometric(1000*alt)/100 for alt in altitudes])
 plt.rcParams.update({'font.size': 10})
 plt.figure(figsize=(8, 4))
 plt.plot(altitudes, pressure_dry_arr, color='k',lw=2,label='with lapse rates')
@@ -366,7 +367,7 @@ def vapor_pressure(T):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 T_array = np.linspace(0, 100, 100)  # Temperature range from 0 to 100 °C
-vapor_pressure_array = [vapor_pressure(T+273.15)/100 for T in T_array]
+vapor_pressure_array = np.array([vapor_pressure(T+273.15)/100 for T in T_array])
 p0_array = [p0/100 for T in T_array]
 
 plt.figure(figsize=(7, 3))
@@ -392,7 +393,7 @@ with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m
 $$
 \begin{align}
 m_m(p,T) &= m_d\big( 1 - f_{H_2O}(p,T) \big) + m_w f_{H_2O}(p,T) \\[5pt]
-         &=  m_d  + (m_w - m_d) \cdot f_{H_2O}(p,T)
+         &=  m_d  - (m_d - m_w) \cdot f_{H_2O}(p,T)
 \end{align}
 $$(moist_molar_mass)
 
@@ -471,27 +472,81 @@ plt.legend()
 plt.show()
 ```
 
-We finally reach an expression for the atmospheric pressure with moist air
+We can finally reach an expression for the atmospheric pressure with moist air
 
 $$
-p_{moist}(h)\approx p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
-$$(p_moist)
+p_{moist}(h)= p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
+$$
 
 Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on $z$ (equation {eq}`moist_molar_mass`). We can therefore split the integral into two terms, and we find back the expression for $p_{dry}(h)$, equation {eq}`with_lapse`:
 
 $$
-p_{moist}(h)\approx p_{dry}(h)\cdot\exp\bigg[-\dfrac{g}{R}(m_w - m_d)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg]
+\begin{align}
+p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg] \\[10pt]
+             &\approx p_{dry}(h) \cdot \exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \varphi(z) \dfrac{p_{vap,w}(z)}{p_{bar}(z)T(z)}dz\bigg]
+\end{align}
 $$(p_moist)
+
+Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. Here, we fixed $p(0)\equiv p^\circ$, so that we are violating the law of conservation of mass. A proper treatment should instead evaluate the total mass of the air column (cfr. equation {eq}`pressure_h`):
+
+$$
+p(0) = \dfrac{F}{A} = \dfrac{1}{R}\int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{T(z)}dz
+$$
+
+Which can be computed only by already knowing the vertical profile of the pressure. We will try our best to find the surface pressure _ab initio_ after we further refine our model. In the meantime, we can approximate $p_{moist}(0)$ by means of a multiplying factor $\chi_m$ given by the fraction between the mass of the moist air column and the dry air column:
+
+$$
+\begin{cases}
+\chi_m = \dfrac{M_{moist}}{M_{dry}} \approx 1 - \dfrac{m_d-m_w}{m_d} \dfrac{\int_{0}^{\infty} f_{H_2O}(z)e^{-gm_dz/(RT_0)}dz}{\int_{0}^{\infty} e^{-gm_dz/(RT_0)} dz} \approx 0.9984 \\[15pt]
+p_{moist}(0) \approx \chi_m p_{dry}(0)
+\end{cases}
+$$
+
+where we used the barometric formula approximation. As said, the water vapor does not strongly influence the atmospheric pressure. Let's then build a function for the pressure with moist air, where we include the factor chi. 
+
+
+```{code-cell} ipython
+def pressure_moist(h,RH,chi):
+    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
+
+    return p_moist
+```
+
+The difference between dry air pressure and moist air pressure is hardly noticeable from a normal plot. To appreciate the change, we also plot the percent difference, in red.
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+
+pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
+rel_diff_dry_moist = (pressure_moist_arr - pressure_dry_arr) / pressure_dry_arr * 100
+fig, ax1 = plt.subplots(figsize=(7, 3))
+ax2 = ax1.twinx()
+ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
+ax1.plot(altitudes, pressure_moist_arr,lw=2,label='moist air (RH=1)',color='b')
+ax1.plot(altitudes, pressure_dry_arr,lw=2,label='dry air',color='k',linestyle='dashed')
+ax2.plot(altitudes, rel_diff_dry_moist,lw=2,label='percent diff (%)',color='r')
+plt.xlim(0,35)
+ax1.set_xlabel("Altitude (km)")
+ax1.set_ylabel("Pressure (hPa)")
+ax2.set_ylabel("%")
+ax1.set_ylim(0)
+ax1.legend(loc=(0.65,0.25))
+ax2.legend(loc=(0.65,0.50))
+plt.show()
+```
 
 
 ### From dew point 
 
 aa
 
+### Clouds
+
 :::{note}
 ### Sea-level pressure reduction
 
-Atmospheric pressure is always reported at the MSL. When a weather station at a certain altitude measures the local pressure, that value is then reduced to the sea level. In other words, the station must estimate the pressure that would be measured if someone digged down to the sea level. This is called **sea-level pressure reduction**, and since no air exists below ground, it is purely hypothetical, so that many assumptions needs to be made. For example, how temperature and humidity would vary going down cannot be properly defined.
+Atmospheric pressure is always reported at the MSL. When a weather station at a certain altitude measures the local pressure, that value is then reduced to the sea level. In other words, the station must estimate the pressure that would be measured if someone digged down to the sea level. This is called **sea-level pressure reduction**, and since no air exists below ground, it is purely hypothetical, so that many assumptions need to be made. For example, how temperature and humidity would vary going down cannot be properly defined.
 
 The sea-level pressure reduction is carried out by means of the <wiki:hypsometric_equation>:
 
@@ -569,7 +624,7 @@ $$
 
 :::
 
-As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modelling is too complicate (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
+As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modeling is too complicated (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
 
 We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius the WGS84 ellipsoid is:
 
@@ -591,6 +646,8 @@ Exaggerated representation of an ellipsoid and the <wiki:vertical_deflection>.
 :::
  
 
+
+## Pressure at surface
 
 
 ## Altitude from pressure
