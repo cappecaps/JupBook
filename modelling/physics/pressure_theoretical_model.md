@@ -539,7 +539,7 @@ plt.show()
 
 ### From dew point 
 
-aa
+The data avaiable from [atmospheric soundings](wiki:atmospheric_sounding) usually 
 
 ### Clouds
 
