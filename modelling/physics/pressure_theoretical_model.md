@@ -281,7 +281,7 @@ plt.grid(True)
 plt.show()
 ```
 
-Now we can define a function to calculate the pressure, which contains the evaluation of the integral of $1/T(h)$ in $dh$.
+We can define a function that calculates the pressure in dry air, and compare it with the barometric approximation.
 
 
 ```{code-cell} ipython
@@ -304,16 +304,21 @@ altitudes = np.linspace(0, 85, 500)     # altitude array in km
 pressure_dry_arr = np.array([pressure_dry(1000*alt)/100 for alt in altitudes])   # divided by 100 to return hPa
 pressure_barom_arr = np.array([pressure_barometric(1000*alt)/100 for alt in altitudes])
 plt.rcParams.update({'font.size': 10})
-plt.figure(figsize=(8, 4))
-plt.plot(altitudes, pressure_dry_arr, color='k',lw=2,label='with lapse rates')
-plt.plot(altitudes, pressure_barom_arr, linestyle='dashed', color='c',lw=2, label='barometric approx.')
-plt.xlabel("Altitude (km)")
-plt.ylabel("Pressure (hPa)")
-plt.legend()
+fig, ax1 = plt.subplots(figsize=(7, 3))
+ax2 = ax1.twinx()
+ax1.plot(altitudes, pressure_dry_arr, color='darkred',lw=2,label='with Γ ($p_{dry}$)')
+ax1.plot(altitudes, pressure_barom_arr, color='c',lw=2, label='barometric approx. ($p_{bar}$)')
+ax2.plot(altitudes, pressure_barom_arr - pressure_dry_arr,linestyle='dashed', color='r', lw=2, label=r'$p_{bar}-p_{dry}$')
+ax1.set_xlabel("Altitude (km)")
+ax1.set_ylabel("Pressure (hPa)")
+ax2.set_ylabel("Pressure difference (hPa)")
+ax1.set_xlim(0,60)
+ax1.legend()
+ax2.legend(loc=7)
 plt.show()
 ```
 
-This results in a very good estimation of the pressure, especially at lower altitudes. As a recap, our model has so far been built within the following approximations:
+Our current model already results in a very good estimation of the pressure, especially close to the surface. As a recap, our model has so far been built within the following approximations:
 - Ideal gas law
 - Spherical Earth, no spin
 - Constant gravitational field
@@ -399,30 +404,35 @@ $$(moist_molar_mass)
 
 Water has a smaller mass compared to the other major species in the air, therefore humidity reduces the average molar mass of a parcel of air, making the atmospheric pressure smaller.
 
-Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air $m_m$, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, that is using a "zeroth-order" dry-air pressure profile $p_{bar}(h)$ from the **barometric formula** (equation {eq}`barometric_formula`) instead of the real $p_{moist}(h)$. 
+Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air $m_m$, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, that is using a "first-order" dry-air pressure profile $p_{dry}(h)$ from the (equation {eq}`with_lapse`) instead of the real $p_{moist}(h)$. 
 
 $$
 \begin{cases}
-f_{H_2O}(h) \approx  \varphi(h) \cdot \dfrac{p_{vap,w}(T(h))}{p_{bar}(h)} \\[15pt]
+f_{H_2O}(h) \approx  \varphi(h) \cdot \dfrac{p_{vap,w}(T(h))}{p_{dry}(h)} \\[15pt]
 p_{vap,w}(T(h)) = 610.78\cdot e^{17.27(T(h)+273.15)/(T(h)+35.85)} \\[10pt]
-p_{bar}(h) = p(0)e^{-gm_dh/(RT_0)}
+p_{dry}(h) = p(0)e^{-gm_d/R\int_0^{h}dz/T(z)}
 \end{cases}
-$$(water_molar_frac_baro)
+$$(water_molar_frac_dry)
 
-where we allowed the relative humidity to vary with altitude. This approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is minimal. If such information doesn't sound right, note that this doesn't mean that water does not alter the pressure at all. It is the presence of condensed-phase water (clouds) that greatly affects the atmospheric pressure, and it does so by locally occupying a much greater fraction of volume of atmosphere. We will later return on clouds. 
+where we allowed the relative humidity to vary with altitude. Such approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is very small. I was actually surprised when I discovered this, and I thought that clouds were the real water carriers. Turns out not to be true. We will return on clouds soon. We can do a quick calculation to give ourself an estimate of the water content in the atmosphere. A MSL atmospheric pressure of 1008 hPa is often considered the threshold for a low-pressure area. Assuming that the change in pressure is only attributed to a change in water content, we can use equation {eq}`water_molar_frac` to roughly evaluate an average value of the water fraction, $\overline{f_{H_2O}}$:
+- 1010 hPa: $\overline{f_{H_2O}} \approx 0.85\%$
+- 1008 hPa: $\overline{f_{H_2O}} \approx 1.37\%$
+- 1000 hPa: $\overline{f_{H_2O}} \approx 3.46\%$
+
+The lowest pressure ever recorded is 870 hPa, which gives an average water fraction of 38%, but our assumption is too crude for that case. Atmospheric pressure is also influenced by temperature and air circulation, which play a greater role in stormy weathers.
 
 Let's built a function to compute $f_{H_2O}$ depending on relative humidity and either temperature or altitude (from the barometric formula). 
 
 ```{code-cell} ipython
-def water_molar_fraction(RH,T=None,h=None):
+def water_molar_fraction(RH,T=None,h=None,p=p0):
     if h is not None:
         if h > 20000:
             return 0.0
         T = temperature(h)
-        p_barom = pressure_barometric(h)
+        p_dry = pressure_dry(h)
     
     else:
-        p_barom = p0
+        p_dry = p
 
     p_vap = vapor_pressure(T)
 
@@ -430,7 +440,7 @@ def water_molar_fraction(RH,T=None,h=None):
     p_water = RH * p_vap
 
     # molar fraction of water vapor
-    f_water = p_water / p_barom
+    f_water = p_water / p_dry
 
     return f_water
 ```
@@ -483,7 +493,7 @@ Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on 
 $$
 \begin{align}
 p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg] \\[10pt]
-             &\approx p_{dry}(h) \cdot \exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \varphi(z) \dfrac{p_{vap,w}(z)}{p_{bar}(z)T(z)}dz\bigg]
+             &\approx p_{dry}(h) \cdot \exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \varphi(z) \dfrac{p_{vap,w}(z)}{p_{dry}(z)T(z)}dz\bigg]
 \end{align}
 $$(p_moist)
 
@@ -498,7 +508,7 @@ Which can be computed only by already knowing the vertical profile of the pressu
 $$
 \begin{cases}
 \chi_m = \dfrac{M_{moist}}{M_{dry}} \approx 1 - \dfrac{m_d-m_w}{m_d} \dfrac{\int_{0}^{\infty} f_{H_2O}(z)e^{-gm_dz/(RT_0)}dz}{\int_{0}^{\infty} e^{-gm_dz/(RT_0)} dz} \approx 0.9984 \\[15pt]
-p_{moist}(0) \approx \chi_m p_{dry}(0)
+p_{moist}(0) \approx \chi_m \, p_{dry}(0)
 \end{cases}
 $$
 
@@ -519,17 +529,17 @@ The difference between dry air pressure and moist air pressure is hardly noticea
 :tags: ["hide-input"]
 
 pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
-rel_diff_dry_moist = (pressure_moist_arr - pressure_dry_arr) / pressure_dry_arr * 100
+diff_moist_dry = pressure_moist_arr - pressure_dry_arr
 fig, ax1 = plt.subplots(figsize=(7, 3))
 ax2 = ax1.twinx()
 ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
-ax1.plot(altitudes, pressure_moist_arr,lw=2,label='moist air (RH=1)',color='b')
-ax1.plot(altitudes, pressure_dry_arr,lw=2,label='dry air',color='k',linestyle='dashed')
-ax2.plot(altitudes, rel_diff_dry_moist,lw=2,label='percent diff (%)',color='r')
+ax1.plot(altitudes, pressure_moist_arr,lw=2,label='$p_{moist}$ (RH=1)',color='b')
+ax1.plot(altitudes, pressure_dry_arr,lw=2,label='$p_{dry}$',color='darkred',linestyle='dashed')
+ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
 plt.xlim(0,35)
 ax1.set_xlabel("Altitude (km)")
 ax1.set_ylabel("Pressure (hPa)")
-ax2.set_ylabel("%")
+ax2.set_ylabel("Pressure difference (hPa)")
 ax1.set_ylim(0)
 ax1.legend(loc=(0.65,0.25))
 ax2.legend(loc=(0.65,0.50))
