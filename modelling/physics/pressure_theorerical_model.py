@@ -3,11 +3,11 @@ import numpy as np
 from scipy.integrate import quad
 
 R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
-g = 9.80665  # Standard gravity in m/s^2
-m_dry = 28.9647e-3  # Molar mass of dry air in kg/mol
+g0 = 9.80665  # Standard gravity in m/s^2
+m_dry = 28.9656e-3  # Molar mass of air in kg/mol
 m_water = 18.01528e-3  # Molar mass of water in kg/mol
-p0 = 101325  # Sea level standard atmospheric pressure in Pa
 T0 = 288.15  # MSL standard temperature in Kelvin
+p0 = 101325  # MSL standard atmospheric pressure in Pa
 
 def temperature(altitude):
     # Define base altitudes and temperatures for each layer
@@ -27,59 +27,67 @@ def temperature(altitude):
     return temperature
 
 
-"""# Plot the graph
-plt.rcParams.update({'font.size': 9})
-plt.figure(figsize=(8, 4))
-plt.plot(altitudes, temperatures, color="red",lw=2)
-plt.xlabel("Altitude (m)")
-plt.ylabel("Temperature (K)")
-plt.grid(True)
-plt.show()"""
+def pressure_barometric(h):
+    pressure = p0 * np.exp(-m_dry * g0 * h / (R * T0))
+
+    return pressure
+
+def pressure_dry(h):
+    integral, err = quad(lambda h: 1 / temperature(h), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    pressure = p0 * np.exp(-m_dry * g0 / R * integral)
+
+    return pressure
 
 
-def barometric_formula(altitude):
-    p_bar = p0 * np.exp(-m_dry * g * altitude / (R * T0))
-
-    return p_bar
-
-def pressure_dry(altitude):
-    integral, _ = quad(lambda h: 1 / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    p_dry = p0 * np.exp(-m_dry * g / R * integral)
-
-    return p_dry
-
-
-def sat_vapor_pressure(T):
-    # Constants for the Tetens equation
-    A = 610.78  # Pa
-    B = 17.27
-    C = 237.3  # °C
-
-    p_vap = A * np.exp((B * (T - 273.15)) / (T - 273.15 + C))     # It converts temperature to Celsius
-
+def vapor_pressure(T):
+    # Tetens equation
+    a = 610.78
+    b = 17.27
+    c = 237.3  
+    p_vap = a * np.exp((b * (T - 273.15)) / (T - 273.15 + c))   
     return p_vap
 
 
-def water_molar_fraction(altitude,RH):
-    # Calculate the vapor pressure
+def water_molar_fraction(RH,T=None,h=None,p=p0):
+    if h is not None:
+        if h > 20000:
+            return 0.0
+        T = temperature(h)
+        p_dry = pressure_dry(h)
+    
+    else:
+        p_dry = p
 
-    if altitude > 20000:
-        return 0.0
+    p_vap = vapor_pressure(T)
 
-    T = temperature(altitude)
-    p_vap = sat_vapor_pressure(T)
-
-    # Calculate the total pressure
-    p_total = barometric_formula(altitude)
-
-    # Calculate the partial pressure of water vapor
+    # partial pressure of water vapor
     p_water = RH * p_vap
 
-    # Calculate the molar fraction of water vapor
-    f_water = p_water / p_total
+    # molar fraction of water vapor
+    f_water = p_water / p_dry
 
     return f_water
 
+
+def water_molar_fraction_2(RH,T=None,h=None,p=p0):
+    if h is not None:
+        if h > 20000:
+            return 0.0
+        T = temperature(h)
+        p_moist_1 = pressure_moist(h,RH,0.9984)
+    
+    else:
+        p_moist_1 = p
+
+    p_vap = vapor_pressure(T)
+
+    # partial pressure of water vapor
+    p_water = RH * p_vap
+
+    # molar fraction of water vapor
+    f_water = p_water / p_moist_1
+
+    return f_water
 
 def moist_molar_mass(altitude,RH):
     f_water = water_molar_fraction(altitude,RH)
@@ -90,15 +98,22 @@ def moist_molar_mass(altitude,RH):
     return m_moist
 
 
-def pressure_moist(altitude,RH):
-    integral, _ = quad(lambda h: moist_molar_mass(h,RH) / temperature(h), 0, altitude, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    p_moist = p0 * np.exp(-g / R * integral)
+def pressure_moist(h,RH,chi):
+    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
+
+    return p_moist
+
+
+def pressure_moist_2(h,RH,chi):
+    integral, _ = quad(lambda z: water_molar_fraction_2(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
 
     return p_moist
 
 def water_fraction_T(T,RH):
     # Calculate the vapor pressure
-    p_vap = sat_vapor_pressure(T)
+    p_vap = vapor_pressure(T)
 
     # Calculate the total pressure
     p_total = p0
@@ -122,43 +137,40 @@ def moist_molar_mass_T(T,RH):
 
 RH = 1.0  # Relative humidity
 
-# Generate altitudes from 0 to 85,000 meters
-altitudes = np.linspace(0, 80000, 50)
+# Generate altitudes from 0 to 85 km
+altitudes = np.linspace(0, 85, 500)
 
 # Calculate temperatures for each altitude
 temperatures = [temperature(alt) for alt in altitudes]
 
-barometric_pressure = [barometric_formula(alt) for alt in altitudes]
-pressures_dry = [pressure_dry(alt) for alt in altitudes]
-pressures_moist = [pressure_moist(alt,RH) for alt in altitudes]
-perc_diff = [(pressures_moist[i] - pressures_dry[i]) / pressures_dry[i] * 100 for i in range(len(pressures_dry))]
+pressure_dry_arr = np.array([pressure_dry(1000*alt)/100 for alt in altitudes])   # divided by 100 to return hPa
 
-moist_molar_mass_alt = [moist_molar_mass(alt,RH) for alt in altitudes]
+"""moist_molar_mass_alt = [moist_molar_mass(alt,RH) for alt in altitudes]
 water_fractions_alt = [water_molar_fraction(alt,RH) for alt in altitudes]
 
 Ts = np.linspace(273.15, 373.15, 100)  # Temperature range from 0 to 100 °C
 water_fractions = [water_fraction_T(T, RH) for T in Ts]
 molar_mass = [moist_molar_mass_T(T, RH) for T in Ts]
-sat_vapor_pressures_T = [sat_vapor_pressure(T) for T in Ts]
-sat_vapor_pressures_alt = [sat_vapor_pressure(temperature(alt)) for alt in altitudes]
+sat_vapor_pressures_T = [vapor_pressure(T) for T in Ts]
+sat_vapor_pressures_alt = [vapor_pressure(temperature(alt)) for alt in altitudes]"""
 
-# Plot the graph
-plt.rcParams.update({'font.size': 10})
-plt.figure(figsize=(8, 4))
-plt.yscale("log")
-#plt.plot(altitudes, water_fractions_alt, color="black", lw=2, label="water fraction")
-#plt.plot(altitudes, pressures_dry, color="red", lw=2, label="dry pressure")
-#plt.plot(altitudes, pressures_moist, color="green", lw=2, label="moist pressure")
-#plt.plot(altitudes, barometric_pressure, color="blue", lw=2, label="barometric pressure")
-plt.plot(altitudes, perc_diff, color="orange", lw=2, label="pressure difference")
-#plt.plot(altitudes, sat_vapor_pressures_alt, color="red", lw=2, label="saturation vapor pressure")
-plt.plot(altitudes, moist_molar_mass_alt, color="blue", lw=2, label="molar mass")
-#plt.plot(Ts, water_fractions, color="black", lw=2, label="water fraction")
-#plt.plot(Ts, sat_vapor_pressures, color="blue", lw=2, label="molar mass")
-plt.xlabel("altitude (m)")
-plt.ylabel("Molar mass (kg/mol)")
-plt.legend()
-plt.grid(True)
-cmap = plt.get_cmap('coolwarm')
-print(cmap(0.5))
+pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
+pressure_moist_2_arr = np.array([pressure_moist_2(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
+diff_moist_dry = pressure_moist_arr - pressure_dry_arr
+diff_moist_2_1 = pressure_moist_2_arr - pressure_moist_arr
+fig, ax1 = plt.subplots(figsize=(7, 3))
+ax2 = ax1.twinx()
+ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
+ax1.plot(altitudes, pressure_moist_arr,lw=2,label='$p_{moist}$ (RH=1)',color='b')
+ax1.plot(altitudes, pressure_moist_2_arr,lw=2,label='$p_{moist}^{(2)}$ (RH=1)',color='orange')
+ax1.plot(altitudes, pressure_dry_arr,lw=2,label='$p_{dry}$',color='darkred',linestyle='dashed')
+#ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
+ax2.plot(altitudes, diff_moist_2_1,lw=2,label=r'$p_{moist}^{(2)}-p_{moist}$',color='orange',linestyle='dashed')
+plt.xlim(0,35)
+ax1.set_xlabel("Altitude (km)")
+ax1.set_ylabel("Pressure (hPa)")
+ax2.set_ylabel("Pressure difference (hPa)")
+ax1.set_ylim(0)
+ax1.legend(loc=(0.65,0.25))
+ax2.legend(loc=(0.65,0.50))
 plt.show()

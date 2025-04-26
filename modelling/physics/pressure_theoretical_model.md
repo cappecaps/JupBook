@@ -356,16 +356,19 @@ $$
 With $\Delta_{vap} H$ the enthalpy of vaporization. However, this formula lacks of the desired accuracy, because of the numerous approximations that led to it: ideal gas, constant $\Delta_{vap} H$ with temperature, no volume change, etc. This is particularly true for water, which deviates from the ideality due to the strong intermolecular interactions it can establish. For this reason, it is common to use empirical formula. Here, we are going to use the <wiki:Tetens_equation> (where T is in °C, and it returns Pa)
 
 $$
-p_{vap,w}(T) = 610.78\cdot \exp\bigg[\dfrac{17.27T}{T+237.3}\bigg]
-$$
+\begin{align}
+p_{vap,w}(T) &= a \exp\bigg[\dfrac{bT}{T+c}\bigg] \\[10pt]
+ &= 610.78\cdot \exp\bigg[\dfrac{17.27T}{T+237.3}\bigg]
+\end{align}
+$$(tetens)
 
 ```{code-cell} ipython
 def vapor_pressure(T):
     # Tetens equation
-    A = 610.78
-    B = 17.27
-    C = 237.3  
-    p_vap = A * np.exp((B * (T - 273.15)) / (T - 273.15 + C))   
+    a = 610.78
+    b = 17.27
+    c = 237.3  
+    p_vap = a * np.exp((b * (T - 273.15)) / (T - 273.15 + c))   
     return p_vap
 ```
 
@@ -503,7 +506,7 @@ $$
 p(0) = \dfrac{F}{A} = \dfrac{1}{R}\int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{T(z)}dz
 $$
 
-Which can be computed only by already knowing the vertical profile of the pressure. We will try our best to find the surface pressure _ab initio_ after we further refine our model. In the meantime, we can approximate $p_{moist}(0)$ by means of a multiplying factor $\chi_m$ given by the fraction between the mass of the moist air column and the dry air column:
+Which can be computed only if we already know the vertical profile of the pressure. We will try our best to find the surface pressure _ab initio_ after we further refine our model. In the meantime, we can approximate $p_{moist}(0)$ through a multiplying factor $\chi_m$, given by the ratio between the masses of the moist air column and the dry air column. With the ISA temperature profile and $\varphi = 1$ up to 20 km we obtain: 
 
 $$
 \begin{cases}
@@ -512,7 +515,7 @@ p_{moist}(0) \approx \chi_m \, p_{dry}(0)
 \end{cases}
 $$
 
-where we used the barometric formula approximation. As said, the water vapor does not strongly influence the atmospheric pressure. Let's then build a function for the pressure with moist air, where we include the factor chi. 
+where we used the barometric formula approximation. This gives an average water fraction of $\overline{f_{w}}\approx 0.16\%$, and $p_{moist}(0) \approx 1011.6 \ \mathrm{hPa}$. Let's then build a function for the pressure with moist air, where we include the factor chi. 
 
 
 ```{code-cell} ipython
@@ -549,7 +552,48 @@ plt.show()
 
 ### From dew point 
 
-The data avaiable from [atmospheric soundings](wiki:atmospheric_sounding) usually 
+The data avaiable from [atmospheric soundings](wiki:atmospheric_sounding) does not usually provide the relative humidity, but the **dew point**. 
+
+:::{note} Dew point
+The <wiki:dew_point> is the temperature the air needs to be cooled to at constant pressure in order to reach a relative humidity of 100\%. 
+
+The vapor pressure of water is the partial pressure of water $p_w$ in the air, and is given by
+
+$$
+p_w(T) = \varphi\cdot p_{vap,w}(T) 
+$$
+
+Mathematically speaking, the dew point is the temperature $T_{dew}$ at which $p_{vap,w}(T_{dew}) \equiv p_w(T)$, i.e. the equilibrium (saturated) vapor pressure is equivalent to the observed partial pressure of water:
+
+$$
+\begin{align}
+p_{vap,w}(T_{dew}) &\equiv \varphi\cdot p_{vap,w}(T)\\[10pt]
+A \exp\bigg[\dfrac{bT_{dew}}{T_{dew}+c}\bigg] &\equiv \varphi \cdot A \exp\bigg[\dfrac{bT}{T+c}\bigg] \\[10pt]
+\dfrac{bT_{dew}}{T_{dew}+c} &\equiv \ln(\varphi) + \dfrac{bT}{T+c}
+\end{align}
+$$(dew_point)
+according to Tetens equation {eq}`tetens`. Solving for $T_{dew}$ we obtain:
+
+$$
+\begin{cases}
+T_{dew} =\dfrac{c\gamma(T,\varphi)}{b-\gamma(T,\varphi)} \\[15pt]
+\gamma(T,\varphi) = \dfrac{bT}{T+c}+\ln\left(R_{H}\right)
+\end{cases}
+$$
+:::
+
+
+The relative humidity at the dry-bulb temperature can be obtained from the dew point by (cfr. {eq}`dew_point`):
+
+$$
+\varphi(T) = \dfrac{p_{vap,w}(T_{dew})}{p_{vap,w}(T)}
+$$
+
+Thus, the fraction of water vapor in the air (equation {eq}`water_molar_frac_dry`) is 
+
+$$
+f_{H_2O}(h) \approx \dfrac{p_{vap,w}(T_{dew}(h))}{p_{dry}(h)}
+$$
 
 ### Clouds
 
@@ -652,7 +696,7 @@ Note that the altitude factor is approximate, since, in an ellipsoid, the center
 
 
 :::{figure} https://upload.wikimedia.org/wikipedia/commons/8/8f/Geodetic_coordinates.svg
-Exaggerated representation of an ellipsoid and the <wiki:vertical_deflection>.
+Representation of an ellipsoid and the <wiki:vertical_deflection>.
 :::
  
 
