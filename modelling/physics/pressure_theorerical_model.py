@@ -7,14 +7,17 @@ g0 = 9.80665  # Standard gravity in m/s^2
 m_dry = 28.9656e-3  # Molar mass of air in kg/mol
 m_water = 18.01528e-3  # Molar mass of water in kg/mol
 T0 = 288.15  # MSL standard temperature in Kelvin
+T1 = 298.15
+H1 = ( T1 - 216.65 ) / 0.0065
+
 p0 = 101325  # MSL standard atmospheric pressure in Pa
 
 def temperature(altitude):
     # Define base altitudes and temperatures for each layer
-    base_altitudes = [0, 11000, 20000, 32000, 47000, 51000, 71000, 84852]
+    base_altitudes = [0, H1, 20000, 32000, 47000, 51000, 71000, 84852]
     lapse_rates = [0.0065, 0.0, -0.001, -0.0028, 0.0, 0.0028, 0.002, 0.0]
 
-    temperature = T0  
+    temperature = T1
 
     # Find the layer corresponding to the altitude
     for i in range(len(base_altitudes) - 1):
@@ -33,7 +36,7 @@ def pressure_barometric(h):
     return pressure
 
 def pressure_dry(h):
-    integral, err = quad(lambda h: 1 / temperature(h), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    integral, err = quad(lambda h: 1 / temperature(h), 0, h, limit=100, points=[0, H1, 20000, 32000, 47000, 51000, 71000, 84852])
     pressure = p0 * np.exp(-m_dry * g0 / R * integral)
 
     return pressure
@@ -69,25 +72,6 @@ def water_molar_fraction(RH,T=None,h=None,p=p0):
     return f_water
 
 
-def water_molar_fraction_2(RH,T=None,h=None,p=p0):
-    if h is not None:
-        if h > 20000:
-            return 0.0
-        T = temperature(h)
-        p_moist_1 = pressure_moist(h,RH,0.9984)
-    
-    else:
-        p_moist_1 = p
-
-    p_vap = vapor_pressure(T)
-
-    # partial pressure of water vapor
-    p_water = RH * p_vap
-
-    # molar fraction of water vapor
-    f_water = p_water / p_moist_1
-
-    return f_water
 
 def moist_molar_mass(altitude,RH):
     f_water = water_molar_fraction(altitude,RH)
@@ -98,18 +82,24 @@ def moist_molar_mass(altitude,RH):
     return m_moist
 
 
+def calc_chi(RH):
+    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / temperature(z), 0, 84852, limit=100, points=[0, H1, 20000, 32000, 47000, 51000, 71000, 84852])
+    integral_norm, _ = quad(lambda z: pressure_dry(z) / temperature(z), 0, 84852, limit=100, points=[0, H1, 20000, 32000, 47000, 51000, 71000, 84852])
+    
+
+    chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_norm)
+
+    return chi
+
+
 def pressure_moist(h,RH,chi):
-    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, H1, 20000, 32000, 47000, 51000, 71000, 84852])
+
     p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
 
     return p_moist
 
 
-def pressure_moist_2(h,RH,chi):
-    integral, _ = quad(lambda z: water_molar_fraction_2(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
-
-    return p_moist
 
 def water_fraction_T(T,RH):
     # Calculate the vapor pressure
@@ -125,6 +115,7 @@ def water_fraction_T(T,RH):
     f_water = p_water / p_total
 
     return f_water
+
 
 def moist_molar_mass_T(T,RH):
     f_water = water_fraction_T(T,RH)
@@ -154,18 +145,16 @@ molar_mass = [moist_molar_mass_T(T, RH) for T in Ts]
 sat_vapor_pressures_T = [vapor_pressure(T) for T in Ts]
 sat_vapor_pressures_alt = [vapor_pressure(temperature(alt)) for alt in altitudes]"""
 
-pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
-pressure_moist_2_arr = np.array([pressure_moist_2(1000*alt,1.0,0.9984)/100 for alt in altitudes])   # divided by 100 to return hPa
+chi = calc_chi(RH)
+print(f'chi: {chi}')
+pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
 diff_moist_dry = pressure_moist_arr - pressure_dry_arr
-diff_moist_2_1 = pressure_moist_2_arr - pressure_moist_arr
 fig, ax1 = plt.subplots(figsize=(7, 3))
 ax2 = ax1.twinx()
 ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
 ax1.plot(altitudes, pressure_moist_arr,lw=2,label='$p_{moist}$ (RH=1)',color='b')
-ax1.plot(altitudes, pressure_moist_2_arr,lw=2,label='$p_{moist}^{(2)}$ (RH=1)',color='orange')
 ax1.plot(altitudes, pressure_dry_arr,lw=2,label='$p_{dry}$',color='darkred',linestyle='dashed')
-#ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
-ax2.plot(altitudes, diff_moist_2_1,lw=2,label=r'$p_{moist}^{(2)}-p_{moist}$',color='orange',linestyle='dashed')
+ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
 plt.xlim(0,35)
 ax1.set_xlabel("Altitude (km)")
 ax1.set_ylabel("Pressure (hPa)")
