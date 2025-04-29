@@ -83,10 +83,10 @@ $$(general_formula)
 Interestingly, to compute the pressure at a certain altitude $h$ we just need to know how the integrand varies below that point, and not above. This is because the formula assumes we know $p(0)$, the pressure at $h=0$, so that the information of the air column above is implicitly contained there. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. In reality, the sea-level pressure varies continuously and it must be measured. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
 
 $$
-p_{bar}(h)=p(0)\exp\bigg[-\dfrac{m_0gh}{k_BT}\bigg]
+p_{bar}(h)=p(0)\exp\bigg[-\dfrac{m_0g_0h}{k_BT}\bigg]
 $$(barometric_formula)
 
-We recognize $m_0gh$ as the potential energy of a single gas particle, and $k_BT$ as its thermal energy. Wait, what? Equation {eq}`barometric_formula` is called the **barometric formula**. The exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of the system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in a uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
+We recognize $m_0g_0h$ as the potential energy of a single gas particle, and $k_BT$ as its thermal energy. Wait, what? Equation {eq}`barometric_formula` is called the **barometric formula**. The exponential term is the Boltzmann factor ($e^{-E/k_BT}$), which, in a canonical ensemble (NVT, our case), represents the probability of the system to be in a state with energy $E$. In our case, $E$ is the potential energy of a mass in a uniform gravitational field, and the Boltzmann factor represents the probability of a particle to be at that altitude. Macroscopically, this becomes the actual pressure of the gas.
 
 From the formula we can infer how the pressure profile changes with different parameters. A smaller particle mass makes the gas less attracted to the surface, and thus more spread toward higher altitudes. The same effect is achieved with higher temperatures, because of the higher kinetic energy of the molecules. Vice-versa, larger masses and lower temperatures make the gas more "compressed" at the surface.
 
@@ -124,18 +124,26 @@ $$
 $$
 The dry air approximation gives the dry adiabatic lapse rate (DALR. $\Gamma_d$):
 $$
-\Gamma_d = \dfrac{g}{c_p} = 9.8\ ^\circ\mathrm{C/km}
+\Gamma_d = \dfrac{g_0}{c_p} = 9.8\ ^\circ\mathrm{C/km}
 $$
-which is valid only at the vicinity of Earth's surface. The ISA provides a set of empirical lapse rates for each atmospheric layer. Starting from a temperature of 15°C (288.15 K) at MSL:
-1. **Troposphere** (0-11 km): 6.5 °C/km
-2. **Tropopause** (11-20 km): 0.0 °C/km
-3. **Stratosphere** (20-32 km): -1.0 °C/km
-4. **Stratosphere** (32-47 km): -2.8 °C/km
-5. **Stratopause** (47-51 km): 0.0 °C/km
-6. **Mesosphere** (51-71 km): 2.8 °C/km
-7. **Mesosphere** (71-84.852 km): 2.0 °C/km
+which is valid only at the vicinity of Earth's surface. The ISA provides a set of empirical lapse rates for each atmospheric layer. 
 
-There are other layers above, but can be ignored since the atmosphere is extremely rarefied. The ranges are given in geopotential altitude.
+```{table} Atmospheric layer data provided by ISA.
+:label: tab:lapse-rates
+:align: center
+| Layer | h range (km) | $\Gamma$ (K/km) | Base T (K) |
+| --- | --- | --- | --- |
+| **Troposphere** | 0 - 11 | +6.5 | 288.15 |
+| **Tropopause** | 11 - 20 | 0.0 | 216.65 |
+| **Stratosphere** | 20 - 32 | -1.0 | 216.65 |
+| **Stratosphere** | 32 - 47 | -2.8 | 228.65 |
+| **Stratopause** | 47 - 51 | 0.0 | 270.65 |
+| **Mesosphere** | 51 - 71 | +2.8 | 270.65 |
+| **Mesosphere** | 71 - 84.852 | +2.0 | 214.65 |
+| **Mesopause** | 84.852 -  | 0.0 | 186.946 |
+```
+
+There are other layers above, but can be ignored for now since the atmosphere is extremely rarefied there. The ranges are given in geopotential altitude.
 
 
 (subheading-chemical-composition)=
@@ -218,7 +226,7 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
 $$
-p_{dry}(h)=p(0)\exp\bigg[-\dfrac{gm_d}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
+p_{dry}(h)=p(0)\exp\bigg[-\dfrac{g_0m_d}{R}\int_0^h\dfrac{1}{T(z)}dz\bigg]
 $$(with_lapse)
 Where we used the average molar mass of dry air $m_d$ and the gas constant $R$ instead of $m_0$ and $k_B$.
 Now the temperature can be written as the general expression:
@@ -249,17 +257,17 @@ define the global variables that we're going to use across this article
 and define a function that returns the temperature at a certain altitude, using equation {eq}`T_fromlapse` for each layer.
 
 ```{code-cell} ipython
-def temperature(altitude):
+def ISA_temperature(h):
     # Define base altitudes and temperatures for each layer
-    base_altitudes = [0, 11000, 20000, 32000, 47000, 51000, 71000, 84852]
-    lapse_rates = [0.0065, 0.0, -0.001, -0.0028, 0.0, 0.0028, 0.002, 0.0]
+    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852]
+    lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
 
-    temperature = T0  
+    temperature = T0
 
     # Find the layer corresponding to the altitude
     for i in range(len(base_altitudes) - 1):
-        if altitude <= base_altitudes[i+1]:
-            return temperature - lapse_rates[i] * (altitude - base_altitudes[i])
+        if h <= base_altitudes[i+1]:
+            return temperature - lapse_rates[i] * (h - base_altitudes[i])
         else:
             temperature = temperature - lapse_rates[i] * (base_altitudes[i+1]-base_altitudes[i])
 
@@ -271,8 +279,8 @@ def temperature(altitude):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 # Generate altitudes from 0 to 85 km and calculate temperature
-altitudes = np.linspace(0, 85, 500)
-temperatures = [temperature(1000*alt) for alt in altitudes]
+altitudes = np.linspace(0, 85, 100)
+temperatures = [ISA_temperature(alt) for alt in altitudes]
 
 plt.rcParams.update({'font.size': 9})
 plt.figure(figsize=(7, 3))
@@ -293,8 +301,8 @@ def pressure_barometric(h):
     return pressure
 
 def pressure_dry(h):
-    integral, err = quad(lambda h: 1 / temperature(h), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    pressure = p0 * np.exp(-m_dry * g0 / R * integral)
+    integral, err = quad(lambda h: 1 / ISA_temperature(h), 0, h, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    pressure = p0 * np.exp(-m_dry * g0 / R * 1000 * integral )
 
     return pressure
 ```
@@ -303,8 +311,8 @@ def pressure_dry(h):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 altitudes = np.linspace(0, 85, 500)     # altitude array in km
-pressure_dry_arr = np.array([pressure_dry(1000*alt)/100 for alt in altitudes])   # divided by 100 to return hPa
-pressure_barom_arr = np.array([pressure_barometric(1000*alt)/100 for alt in altitudes])
+pressure_dry_arr = np.array([pressure_dry(alt)/100 for alt in altitudes])   # divided by 100 to return hPa
+pressure_barom_arr = np.array([pressure_barometric(alt)/100 for alt in altitudes])
 plt.rcParams.update({'font.size': 10})
 fig, ax1 = plt.subplots(figsize=(7, 3))
 ax2 = ax1.twinx()
@@ -339,7 +347,7 @@ Atmospheric pressure is always reported at the MSL. When a weather station at a 
 The sea-level pressure reduction is carried out by means of the <wiki:hypsometric_equation>:
 
 $$
-p_{MSL} = p_{obs}\cdot \exp\bigg[\frac{m_mgh}{R\overline{T}}\bigg]
+p_{MSL} = p_{obs}\cdot \exp\bigg[\frac{m_mg_0h}{R\overline{T}}\bigg]
 $$
 
 where $h$ is the altitude in which the pressure $p_{obs}$ is measured, $p_{MSL}$ is the pressure at the MSL, and $\overline{T}$ is the mean temperature of the (moist) air with molar mass $m_m$ (I omitted to explain the <wiki:virtual_temperature>, but the formula is equivalent). The hypsometric equation is basically the barometric formula (equation {eq}`barometric_formula`), but with an average temperature across the vertical distance. The average temperature can simply be computed using the standard lapse rate $\Gamma$, and a 12-hour average surface temperature, an attempt to exclude the effect of the irradiation of surface of the Earth:
@@ -378,7 +386,7 @@ $$
 With $\Delta_{vap} H$ the enthalpy of vaporization. However, this formula lacks of the desired accuracy, because of the numerous approximations that led to it: ideal gas, constant $\Delta_{vap} H$ with temperature, no volume change, etc. This is particularly true for water, which deviates from the ideality due to the strong intermolecular interactions it can establish. For this reason, it is common to use empirical formula. Here, we are going to use the <wiki:Tetens_equation>
 
 $$
-p_{vap,w}(T) &= a \exp\bigg[\dfrac{bT}{T+c}\bigg]
+p_{vap,w}(T) = a \exp\bigg[\dfrac{bT}{T+c}\bigg]
 $$(tetens)
 
 with $a=610.78,b=17.27,c=237.3$ for $p_{vap,w}:$ °C $\rightarrow$ Pa
@@ -434,7 +442,7 @@ $$
 \begin{cases}
 f_{H_2O}(h) \approx  \varphi(h) \cdot \dfrac{p_{vap,w}(T(h))}{p_{dry}(h)} \\[15pt]
 p_{vap,w}(T(h)) = 610.78\cdot e^{17.27(T(h)+273.15)/(T(h)+35.85)} \\[10pt]
-p_{dry}(h) = p(0)e^{-gm_d/R\int_0^{h}dz/T(z)}
+p_{dry}(h) = p(0)e^{-g_0m_d/R\int_0^{h}dz/T(z)}
 \end{cases}
 $$(water_molar_frac_dry)
 
@@ -450,9 +458,9 @@ Let's built a function to compute $f_{H_2O}$ depending on relative humidity and 
 ```{code-cell} ipython
 def water_molar_fraction(RH,T=None,h=None,p=p0):
     if h is not None:
-        if h > 20000:
+        if h > 20:
             return 0.0
-        T = temperature(h)
+        T = ISA_temperature(h)
         p_dry = pressure_dry(h)
     
     else:
@@ -495,7 +503,7 @@ and it makes sense that $f_{H_2O}$ never exceeds 5\% on Earth. Taking the temper
 ```{code-cell} ipython
 :tags: ["hide-input"]
 
-f_water_RHs = [[water_molar_fraction(RH=RH,h=1000*alt)*100 for alt in altitudes] for RH in RHs]
+f_water_RHs = [[water_molar_fraction(RH=RH,h=alt)*100 for alt in altitudes] for RH in RHs]
 plt.figure(figsize=(7, 3))
 for idx,RH in enumerate(RHs):
     plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
@@ -509,22 +517,22 @@ plt.show()
 We can finally reach an expression for the atmospheric pressure with moist air
 
 $$
-p_{moist}(h)= p(0)\exp\bigg[-\dfrac{g}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
+p_{moist}(h)= p(0)\exp\bigg[-\dfrac{g_0}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
 $$
 
 Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on $z$ (equation {eq}`moist_molar_mass`). We can therefore split the integral into two terms, and we find back the expression for $p_{dry}(h)$, equation {eq}`with_lapse`:
 
 $$
 \begin{align}
-p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg] \\[10pt]
-             &\approx p_{dry}(h) \cdot \exp\bigg[\dfrac{g}{R}(m_d - m_w)\int_0^h \varphi(z) \dfrac{p_{vap,w}(z)}{p_{dry}(z)T(z)}dz\bigg]
+p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g_0}{R}(m_d - m_w)\int_0^h \dfrac{f_{H_2O}(z)}{T(z)}dz\bigg] \\[10pt]
+             &\approx p_{dry}(h) \cdot \exp\bigg[\dfrac{g_0}{R}(m_d - m_w)\int_0^h \varphi(z) \dfrac{p_{vap,w}(z)}{p_{dry}(z)T(z)}dz\bigg]
 \end{align}
 $$(p_moist)
 
 Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. Here, we fixed $p(0)\equiv p^\circ$, so that we are violating the law of conservation of mass. A proper treatment should instead evaluate the total mass of the air column (cfr. equation {eq}`pressure_h`):
 
 $$
-p(0) = \dfrac{Mg}{A} = \int_{0}^{\infty} n(z)m_{m}(z)g(z) dz = \int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{RT(z)}dz
+p(0) = \dfrac{F}{A} = \int_{0}^{\infty} n(z)m_{m}(z)g(z) dz = \int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{RT(z)}dz
 $$
 
 Which can be computed only if we already know the vertical profile of the pressure. We will try our best to find the surface pressure _ab initio_ after we further refine our model. In the meantime, we can compute $p_{moist}(0)$ through a multiplying factor $\chi_m$, given by the ratio between the pressures exerted by the moist air column and the dry air column, i.e. $p_{moist}(0) = \chi_m \, p_{dry}(0)$:
@@ -547,16 +555,16 @@ Let's then build a function to calculate the factor $\chi$ and then include it i
 
 ```{code-cell} ipython
 def calc_chi(RH):
-    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / temperature(z), 0, 84852, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    integral_tot, _ = quad(lambda z: pressure_dry(z) / temperature(z), 0, 84852, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
+    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature(z), 0, 84.852, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    integral_tot, _ = quad(lambda z: pressure_dry(z) / ISA_temperature(z), 0, 84.852, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
     
     chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_tot)
 
     return chi
 
 def pressure_moist(h,RH,chi):
-    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / temperature(z), 0, h, limit=100, points=[0, 11000, 20000, 32000, 47000, 51000, 71000, 84852])
-    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * integral)
+    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / ISA_temperature(z), 0, h, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * 1000 * integral)
 
     return p_moist
 ```
@@ -564,7 +572,7 @@ def pressure_moist(h,RH,chi):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 chi = calc_chi(RH)
-pressure_moist_arr = np.array([pressure_moist(1000*alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
+pressure_moist_arr = np.array([pressure_moist(alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
 diff_moist_dry = pressure_moist_arr - pressure_dry_arr
 fig, ax1 = plt.subplots(figsize=(7, 3))
 ax2 = ax1.twinx()
@@ -642,7 +650,7 @@ $$
 
 ### Clouds
 
-Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity exceeds 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one might expect, only a tiny fraction of the cloud volume is occupied by liquid water. LWC ranges within 0.03-3.0 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air. Considering that 1 m{sup}`3` of air at the limit of the troposhere, which is roughly the upper limit for clouds, weigths 
+Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity exceeds 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one might expect, only a tiny fraction of the cloud volume is occupied by liquid water. LWC ranges within 0.03-3.0 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air. Considering that 1 m{sup}`3` of air at the limit of the troposhere, which is roughly the upper limit for clouds, weigths circa 364 grams:
 
 $$
 M(11 \, \mathrm{km}) = \dfrac{m_d\,p_{dry}(11\, \mathrm{km})\cdot 1\, \mathrm{m}^3}{RT(11\, \mathrm{km})} \approx 364 \, \mathrm{g}
@@ -651,7 +659,67 @@ $$
 we deduce that the weight of clouds can be safely ignored.
 
 
-## Composition at high altitudes
+## The thermosphere
+
+The thermosphere is the outer layer of the atmosphere, above 80 km of altitude. The name stems from the high temperatures that are reached due to the ionizing radiation from the sun. 
+
+### Temperature of the thermosphere
+
+The ISA model does not include the thermosphere, but reaches a maximum altitude of 86 km, where the temperature is 186.946 K. The data for the thermosphere is provided by the [NRLMSIS empirical model](https://swx-trec.com/msis/). The temperature profile of the two models combined is shown in [](#fig:thermo-T-altitude), where I extended the constant temperature of the stratopause (186.946 K) up to 107.41 km, and used an exponential regression upward (see red line). The empirical fitting gives the function:
+
+$$
+T(h) =  -9799 e^{-0.0238x} + 947.23, \quad 107.41\,\mathrm{km} \le h \le 1000 \,\mathrm{km}
+$$
+
+:::{figure} ../../images/thermosphere_T_h.png
+:label: fig:thermo-T-altitude
+:align: center
+:w: 400px
+
+Temperature profile with altitude (black dots). The red line is the union between the ISA model (below 86 km), and my fitting. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. Graph from my [Desmos](https://www.desmos.com/calculator/pnt2qmypuf).
+
+:::
+
+We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
+
+```{code-cell} ipython
+def ISA_temperature_up_to_1000(h,T_surf=None,L_0=None):
+    # Define base altitudes and temperatures for each layer
+    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41]
+    lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
+    base_temperatures = [288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65, 186.946]
+
+    if h > 1000 or h < 0:
+        raise TypeError("Altitude range is 0-1000 km")
+    elif h >= base_altitudes[-1]:   # Thermosphere
+        return -9799 * np.exp(-0.0238 * h) + 947.23
+    elif h < base_altitudes[2]:     # If in troposphere, check for custom parameters
+        if T_surf is not None:
+            temperature = T_surf
+        else:    
+            temperature = base_temperatures[0]
+
+        if L_0 is not None and L_0 <= 0:
+            raise TypeError("Troposphere lapse rate must be positive and non-zero")
+        elif L_0 is not None:
+            lapse_rates[0] = L_0
+
+        if T_surf is not None or L_0 is not None:
+            if ( temperature - base_temperatures[1] ) / lapse_rates[0] > base_altitudes[2]:
+                raise TypeError("Surface temperature is too high or lapse rate is too small")
+            
+            base_altitudes[1] = ( temperature - base_temperatures[1] ) / lapse_rates[0]
+
+
+    # Find the layer corresponding to the altitude
+    for i in range(len(base_altitudes) - 1):
+        if h <= base_altitudes[i+1]:
+            return temperature - lapse_rates[i] * (h - base_altitudes[i])
+        else:
+            temperature = base_temperatures[i+1]
+```
+
+### Composition in the thermosphere
 
 The value that we calculated in [](#subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition constant up to 85 km ([](#fig:composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km ([](#fig:CO2-altitude)). 
 
@@ -669,7 +737,7 @@ Atmospheric composition versus altitude
 :align: center
 :w: 400px
 
-Altitude profile of $\mathrm{CO}_2$ molar fraction, in ppm. From [Brown et al. (2024)](https://doi.org/10.1029/2024JA032659).
+Altitude profile of $\mathrm{CO}_2$ molar fraction, in ppm. From [Brown et al. (2024)](https://doi.org/10.1029/2024JA032659). Graph from my [Desmos](https://www.desmos.com/calculator/ohzv68xy5w).
 
 :::
 
@@ -677,8 +745,8 @@ Since the atmospheric pressure at 85 km is $p_{dry}(85\,\mathrm{km})\approx 0.5\
 
 $$
 m_d(h)=\begin{cases}
-28.9656,\quad h\le 90\,\mathrm{km}\\
-28.9656\cdot e^{0.002(h-85\,\mathrm{km})}, \quad h\gt 90\,\mathrm{km}
+28.9656,\quad h\le 85\,\mathrm{km}\\
+28.9656\cdot e^{0.002(h-85\,\mathrm{km})}, \quad h\gt 85\,\mathrm{km}
 \end{cases}
 $$
 
@@ -688,15 +756,21 @@ $$
 :align: center
 :w: 400px
 
-The average molar mass in g/mol versus altitude in km (black dots). The blue dashed line is the (exponential) regression. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/). 
+Average molar mass of air (black dots) versus altitude. The blue dashed line is the (exponential) regression. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. 
 
 :::
 
-
+```{code-cell} ipython
+def avg_m_dry_air(h):  
+    if h <= 85000:
+        return m_dry
+    else:
+        return m_dry * np.exp(0.002*(h-85000))
+```
 
 ## Earth as a spinning spheroid
 
-Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$.
+Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity).
 
 ### Gravity with altitude
 
@@ -706,18 +780,18 @@ $$
 g_0(h) = G\dfrac{M}{(R+h)^2}  
 $$
 
-Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded at $h=0$:
+Where the subscript 0 refers to the spherical symmetry of Earth. The formula can be expanded in powers of $h$ around the point $h=0$:
 
 $$
 g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n}\left(n+1\right) \dfrac{h^n}{R^n}= \dfrac{g_0}{\left(1+\dfrac{h}{R}\right)^2}
 $$(g_h)
 
-where we used the power series. We can call the term $\left(1+h/R\right)^{-2}$ the altitude factor.
+where we used the power series. We call the term $\left(1+h/R\right)^{-2}$ the altitude factor, which makes the gravitational acceleration decrease with $h$ squared, as expected.
 
 
 ### Reference ellipsoid
 
-We now account more accurately for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
+We now more accurately account for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
 
 :::{note}
 
@@ -739,12 +813,12 @@ World Geodetic System 1984 describes Earth as a reference ellipsoid with the fol
 From these parameters are derived:
 - eccentricity $e = \sqrt{1-b^2/a^2} \approx 0.0818$
 - equatorial gravity $g_e = 9.7803253359\ \mathrm{m/s}^2$ 
-- polar gravity $g_e = 9.8321849378\ \mathrm{m/s}^2$
+- polar gravity $g_p = 9.8321849378\ \mathrm{m/s}^2$
 
 The Ellipsoidal Gravity Formula (see <wiki:Theoretical_gravity#Somigliana_equation>) gives the gravitational acceleration depending on the latitude $\varphi$:
 
 $$
-g(\phi) = g_e  \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} 
+g_{WGS84}(\phi) = g_e  \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}} 
 $$(WGS84)
 
 with $k$ a constant
@@ -757,30 +831,74 @@ $$
 
 As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modeling is too complicated (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
 
-We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius the WGS84 ellipsoid is:
+We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius of the WGS84 ellipsoid with altitude is:
 
 $$
 R(\phi) = \dfrac{R_eR_p}{\sqrt{\left(R_p\cos(\phi)\right)^2+\left(R_e\sin(\phi)\right)^2}}
 $$
 
-so that we obtain
+so that we can combine it with the altitude factor to achieve a general expression for the gravitational acceleration depending on both altitude and latitude
 
 $$
 g(h,\phi) = g_e  \dfrac{1+k\sin^2(\phi)}{\sqrt{1-e^2\sin^2(\phi)}}\cdot  \dfrac{1}{\left(1+\dfrac{h}{R(\phi)}\right)^2}
 $$(WGS84_h)
 
-Note that the altitude factor is approximate, since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator ([](#fig:vertical-deflection)). Moreover, the factor does not take into account the increase of the centrifugal force with altitude. We can consider such correction negligible.
+Note that simply applying the altitude factor is an approximate solution since, in an ellipsoid, the center of gravity is not intersected by the normal of the surface, except at the poles and at the equator ([](#fig:vertical-deflection)). Moreover, the altitude factor does not take into account the increase in centrifugal force with altitude. We can consider such correction negligible.
 
 
 :::{figure} https://upload.wikimedia.org/wikipedia/commons/8/8f/Geodetic_coordinates.svg
 :label: fig:vertical-deflection
 Representation of an ellipsoid and the <wiki:vertical_deflection>.
 :::
- 
+
+
+A python function that returns $g(h,\phi)$ may be:
+
+```{code-cell} ipython
+def g_WGS84_altitude(h,latitude):
+    # WGS84 model for gravity times the altitude factor. Latitude in degrees
+    a = 6378137.0
+    b = 6356752.314140 
+    g_e = 9.7803253359
+    g_p = 9.8321849378
+    e2 = 1 - (b**2 / a**2)
+    k = (b * g_p - a * g_e) / (a * g_e)
+    h = h * 1000.0 # Convert altitude to meters
+
+    latitude = latitude * np.pi / 180.0  # Convert latitude to radians
+
+    g_lat = g0 * (1 + k * np.sin(latitude)**2) / (1 - e2 * np.sin(latitude)**2)**0.5
+    R_lat = a*b / (a * np.sin(latitude)**2 + b * np.cos(latitude)**2)
+    g = g_lat / ( 1 + (h / R_lat) )**2
+    return g
+```
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+altitudes = np.linspace(0, 800, 100)
+fig, ax = plt.subplots(figsize=(7, 3))
+gravity_eq = [g_WGS84_altitude(alt,0) for alt in altitudes]
+gravity_pol = [g_WGS84_altitude(alt,90) for alt in altitudes]
+ax.plot(altitudes, gravity_eq,lw=2,color='darkred',label='Equator')
+ax.plot(altitudes, gravity_pol,lw=2,color='lightblue',label='Pole')
+ax.set_xlabel("Altitude (km)")
+ax.set_ylabel("Gravity (m/s²)")
+ax.set_xlim(0)
+ax.legend()
+plt.show()
+```
 
 
 ## Pressure at surface
 
+We thus have built the best model we can concieve for atmospheric model. If we allow the temperature and humidity to change with latitude, we can write
+
+$$
+p(h,\phi)=p(0)\exp\bigg[-\dfrac{1}{R}\int_0^h\dfrac{g(z,\phi)m_m(z,\phi)}{T(z,\phi)}dz\bigg]
+$$
+
+
+### Total atmospheric mass
 
 ## Altitude from pressure
 
