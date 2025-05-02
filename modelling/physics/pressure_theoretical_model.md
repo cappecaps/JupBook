@@ -554,9 +554,9 @@ Let's then build a function to calculate the factor $\chi$ and then include it i
 
 
 ```{code-cell} ipython
-def calc_chi(RH):
-    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature(z), 0, 84.852, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
-    integral_tot, _ = quad(lambda z: pressure_dry(z) / ISA_temperature(z), 0, 84.852, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+def calc_chi(RH,maxh=84.852):
+    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    integral_tot, _ = quad(lambda z: pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
     
     chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_tot)
 
@@ -680,12 +680,12 @@ Temperature profile with altitude (black dots). The red line is the union betwee
 
 :::
 
-We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
+We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level, and extend the functions to calculate $\chi$ and $p_{dry}$. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
 
 ```{code-cell} ipython
-def ISA_temperature_up_to_1000(h,T_surf=None,L_0=None):
+def ISA_temperature_up_to_1000(h,T_surf=None,L0=None):
     # Define base altitudes and temperatures for each layer
-    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41]
+    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41] 
     lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
     base_temperatures = [288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65, 186.946]
 
@@ -699,12 +699,12 @@ def ISA_temperature_up_to_1000(h,T_surf=None,L_0=None):
         else:    
             temperature = base_temperatures[0]
 
-        if L_0 is not None and L_0 <= 0:
+        if L0 is not None and L0 <= 0:
             raise TypeError("Troposphere lapse rate must be positive and non-zero")
-        elif L_0 is not None:
-            lapse_rates[0] = L_0
+        elif L0 is not None:
+            lapse_rates[0] = L0
 
-        if T_surf is not None or L_0 is not None:
+        if T_surf is not None or L0 is not None:
             if ( temperature - base_temperatures[1] ) / lapse_rates[0] > base_altitudes[2]:
                 raise TypeError("Surface temperature is too high or lapse rate is too small")
             
@@ -717,6 +717,7 @@ def ISA_temperature_up_to_1000(h,T_surf=None,L_0=None):
             return temperature - lapse_rates[i] * (h - base_altitudes[i])
         else:
             temperature = base_temperatures[i+1]
+
 ```
 
 ### Composition in the thermosphere
@@ -761,11 +762,15 @@ Average molar mass of air (black dots) versus altitude. The blue dashed line is 
 :::
 
 ```{code-cell} ipython
-def avg_m_dry_air(h):  
-    if h <= 85000:
+def avg_air_molar_mass(h,RH):
+    #altitude in km
+    if h < 20:
+        f_water = water_molar_fraction(RH,h=h)
+        return (1 - f_water) * m_dry + f_water * m_water
+    elif h < 85:
         return m_dry
     else:
-        return m_dry * np.exp(0.002*(h-85000))
+        return avg_m_dry_air(h)
 ```
 
 ## Earth as a spinning spheroid
@@ -856,7 +861,7 @@ A python function that returns $g(h,\phi)$ may be:
 
 ```{code-cell} ipython
 def g_WGS84_altitude(h,latitude):
-    # WGS84 model for gravity times the altitude factor. Latitude in degrees
+    # WGS84 model for gravity times the altitude factor. Latitude in degrees, altitude in km
     a = 6378137.0
     b = 6356752.314140 
     g_e = 9.7803253359
@@ -889,16 +894,96 @@ plt.show()
 ```
 
 
-## Pressure at surface
+## The final model
 
-We thus have built the best model we can concieve for atmospheric model. If we allow the temperature and humidity to change with latitude, we can write
+We thus have built the best model we can concieve for atmospheric model. If we allow temperature and humidity as well to change with latitude, we can write
 
 $$
 p(h,\phi)=p(0)\exp\bigg[-\dfrac{1}{R}\int_0^h\dfrac{g(z,\phi)m_m(z,\phi)}{T(z,\phi)}dz\bigg]
 $$
 
+Our python function will then include the recently defined `g_WGS84_altitude`, `air_avg_molar_mass`, and `ISA_temperature_up_to_1000` functions to evaluate the integral. We don't need to include our recent enhancements of the model in the calculation of $p_{dry}$, since that is needed only to obtain $f_{H_2O}$.
+
+```{code-cell} ipython
+def pressure_dry_up_to_1000(h,T_surf=288.15,L0=6.5):  
+    H1 = ( T_surf - 216.65 ) / L0
+    if H1 > 11:
+        raise TypeError("Surface temperature is too high or lapse rate is too small")
+      
+    integral, _ = quad(lambda h: 1 / ISA_temperature_up_to_1000(h,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    pressure = p0 * np.exp(-m_dry * g0 / R * 1000 * integral)
+
+    return pressure
+
+def water_molar_fraction_up_to_1000(RH,h,T_surf=288.15,L0=6.5):
+    if h > 20 or RH == 0:
+        return 0.0
+    
+    H1 = ( T_surf - 216.65 ) / L0
+    if H1 > 11:
+        raise TypeError("Surface temperature is too high or lapse rate is too small")
+
+    T = ISA_temperature_up_to_1000(h,T_surf,L0)
+    p_dry = pressure_dry_to_1000(h,T_surf,L0)
+    p_vap = vapor_pressure(T)
+
+    p_water = RH * p_vap
+
+    f_water = p_water / p_dry
+
+    return f_water
+
+def calc_chi_up_to_1000(RH,maxh=1000,T_surf=288.15,L0=6.5):
+    H1 = ( T_surf - 216.65 ) / L0
+    if H1 > 11:
+        raise TypeError("Surface temperature is too high or lapse rate is too small")
+    
+    integral_frac, _ = quad(lambda z: water_molar_fraction_up_to_1000(RH,h=z,T_surf,L0) * pressure_dry_up_to_1000(z,T_surf,L0) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, 20, limit=100, points=[0, H1, 20])  #up to 20 km since above that the water fraction is 0 
+    integral_norm, _ = quad(lambda z: pressure_dry_up_to_1000(z,T_surf,L0) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, maxh, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    
+    chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_norm)
+
+    return chi
+
+def pressure_moist_WGS84(h,lat,RH=0.0,chi=1.0,T_surf=288.15,L0=6.5):
+    H1 = ( T_surf - 216.65 ) / L0
+    integral, _ = quad(lambda z: g_WGS84_altitude(z,lat) * air_avg_molar_mass(z,RH) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+
+    p_moist = chi * p0 * np.exp(- 1000 * integral / R)
+
+    return p_moist
+```
 
 ### Total atmospheric mass
+
+With our model, we can calculate the total mass of our atmosphere, assuming a MSL standard pressure of 1013.25 hPa. What we need to do is just integrate the density through the entire atmospheric spherical shell. The density $\rho_d$ of an ideal gas is given by
+
+$$
+\rho = \dfrac{mp}{RT}
+$$
+
+with $m$ the molar mass. We can then calculate the total atmospheric mass $M_{atm}$ as
+
+$$
+\begin{align}
+ M_{atm} &= \int_{0}^{2\pi} \int_{0}^{\pi} \int_{R(\phi)}^{\infty} \rho(r,\phi)\, d\theta\, \sin(\phi) d\phi\, r^2 dr \\[15pt]
+ &= \int_{0}^{2\pi} \int_{0}^{\pi} \int_{R(\phi)}^{\infty} \dfrac{m_m(r-R(\phi),\phi)\,p(r-R(\phi),\phi)}{RT(r-R(\phi))} d\theta\, \sin(\phi) d\phi\, r^2 dr 
+\end{align}
+$$
+
+The radial integration should start from the Earth's surface ($R(\phi)$), and since our functions are defined with respect to the altitude $h$, we need to shift them by $R(\phi)$. We can then substitute the integrand $r$ with $h=r-R(\phi)$, so that the integral in $dh=dr$ will go from 0 to infinity. Moreover, we can integrate in $d\theta$, as no functions depend on the longitude $\theta$:
+
+$$
+\begin{align}
+ M_{atm} &= \dfrac{2\pi}{R} \int_{0}^{\pi} \int_{0}^{\infty} \dfrac{m_m(h,\phi)\,p(h,\phi)}{T(h,\phi)}  \sin(\phi) d\phi\, \left(h+R(\phi)\right)^2 dh \\[15pt]
+&= \dfrac{2\pi}{R} p(0) \int_{0}^{\pi} \int_{0}^{\infty} \dfrac{m_m(h,\phi)}{T(h,\phi)}\exp\bigg[-\dfrac{1}{R}\int_0^{h} \dfrac{g(z,\phi)m_m(z,\phi)}{T(z,\phi)}dz\bigg]  \sin(\phi) d\phi\, \left(h+R(\phi)\right)^2 dh
+\end{align}
+$$
+
+where we explicitated $p(h,\phi)$. To calculate $M_{atm}$ thus requires to evaluate three integrals. It may make your laptop hot.
+
+
+
 
 ## Altitude from pressure
 
