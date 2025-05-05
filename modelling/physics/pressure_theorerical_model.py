@@ -35,7 +35,7 @@ def pressure_barometric(h):
     return pressure
 
 def pressure_dry(h):
-    integral, err = quad(lambda h: 1 / ISA_temperature_up_to_1000(h), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral, err = quad(lambda h: 1 / ISA_temperature_1000km(h), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
     pressure = p0 * np.exp(-m_dry * g0 / R * 1000 * integral)
 
     return pressure
@@ -54,7 +54,7 @@ def water_molar_fraction(RH,T=None,h=None,p=p0):
     if h is not None:
         if h > 20:
             return 0.0
-        T = ISA_temperature_up_to_1000(h)
+        T = ISA_temperature_1000km(h)
         p_dry = pressure_dry(h)
     
     else:
@@ -91,8 +91,8 @@ def calc_chi(RH,maxh=1000):
         L0 = 6.5
 
     H1 = ( T_surf - 216.65 ) / L0
-    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature_up_to_1000(z), 0, 20, limit=100, points=[0, H1, 20]) #up to 20 km since above that the water fraction is 0
-    integral_norm, _ = quad(lambda z: pressure_dry(z) / ISA_temperature_up_to_1000(z), 0, maxh, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature_1000km(z), 0, 20, limit=100, points=[0, H1, 20]) #up to 20 km since above that the water fraction is 0
+    integral_norm, _ = quad(lambda z: pressure_dry(z) / ISA_temperature_1000km(z), 0, maxh, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
     
     chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_norm)
 
@@ -122,12 +122,12 @@ def water_fraction_T(T,RH):
 
     return f_water
 
-def pressure_dry_up_to_1000(h,T_surf=288.15,L0=6.5):
+def pressure_dry_1000km(h,T_surf=288.15,L0=6.5):
     H1 = ( T_surf - 216.65 ) / L0
     if H1 > 11:
         raise TypeError("Surface temperature is too high or lapse rate is too small")
         
-    integral, _ = quad(lambda h: 1 / ISA_temperature_up_to_1000(h,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral, _ = quad(lambda h: 1 / ISA_temperature_1000km(h,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
     pressure = p0 * np.exp(-m_dry * g0 / R * 1000 * integral)
 
     return pressure
@@ -140,7 +140,7 @@ def moist_molar_mass_T(T,RH):
 
     return m_moist
 
-def ISA_temperature_up_to_1000(h,T_surf=None,L0=None):
+def ISA_temperature_1000km(h,T_surf=None,L0=None):
     # Define base altitudes and temperatures for each layer
     base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41]
     lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
@@ -201,7 +201,7 @@ def pressure_moist_WGS84(h,lat,RH=0.0,chi=1.0,T_surf=None,L0=None):
         L0 = 6.5
 
     H1 = ( T_surf - 216.65 ) / L0
-    integral, _ = quad(lambda z: g_WGS84_altitude(z,lat) * air_avg_molar_mass(z,RH) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral, _ = quad(lambda z: g_WGS84_altitude(z,lat) * air_avg_molar_mass(z,RH) / ISA_temperature_1000km(z,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
     p_moist = chi * p0 * np.exp(- 1000 * integral / R)
 
     return p_moist
@@ -213,7 +213,7 @@ RH = 1.0  # Relative humidity
 altitudes = np.linspace(0, 150, 500)
 
 # Calculate temperatures for each altitude
-#temperatures = [ISA_temperature_up_to_1000(alt) for alt in altitudes]
+#temperatures = [ISA_temperature_1000km(alt) for alt in altitudes]
 
 pressure_dry_arr = np.array([pressure_dry(alt)/100 for alt in altitudes])   # divided by 100 to return hPa
 
@@ -253,8 +253,8 @@ plt.show()
 """#Plot single axis
 fig, ax1 = plt.subplots(figsize=(7, 4))
 altitudes = np.linspace(0,800,50)
-#temperatures_smaller = [ISA_temperature_up_to_1000(alt) for alt in altitudes]
-#temperatures_smaller_mod = [ISA_temperature_up_to_1000(alt,T_surf=298.15,L0=5.0) for alt in altitudes]
+#temperatures_smaller = [ISA_temperature_1000km(alt) for alt in altitudes]
+#temperatures_smaller_mod = [ISA_temperature_1000km(alt,T_surf=298.15,L0=5.0) for alt in altitudes]
 gravity_eq = [g_WGS84_altitude(alt,0) for alt in altitudes]
 gravity_pol = [g_WGS84_altitude(alt,90) for alt in altitudes]
 ax1.plot(altitudes, gravity_eq,lw=2,color='darkred',label='Equator')

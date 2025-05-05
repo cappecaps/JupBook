@@ -683,7 +683,7 @@ Temperature profile with altitude (black dots). The red line is the union betwee
 We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level, and extend the functions to calculate $\chi$ and $p_{dry}$. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
 
 ```{code-cell} ipython
-def ISA_temperature_up_to_1000(h,T_surf=None,L0=None):
+def ISA_temperature_1000km(h,T_surf=None,L0=None):
     # Define base altitudes and temperatures for each layer
     base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41] 
     lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
@@ -747,7 +747,7 @@ Since the atmospheric pressure at 85 km is $p_{dry}(85\,\mathrm{km})\approx 0.5\
 $$
 m_d(h)=\begin{cases}
 28.9656,\quad h\le 85\,\mathrm{km}\\
-28.9656\cdot e^{0.002(h-85\,\mathrm{km})}, \quad h\gt 85\,\mathrm{km}
+28.9656\cdot e^{-0.002(h-85\,\mathrm{km})}, \quad h\gt 85\,\mathrm{km}
 \end{cases}
 $$
 
@@ -762,7 +762,7 @@ Average molar mass of air (black dots) versus altitude. The blue dashed line is 
 :::
 
 ```{code-cell} ipython
-def avg_air_molar_mass(h,RH):
+def air_avg_molar_mass(h,RH):
     #altitude in km
     if h < 20:
         f_water = water_molar_fraction(RH,h=h)
@@ -770,7 +770,7 @@ def avg_air_molar_mass(h,RH):
     elif h < 85:
         return m_dry
     else:
-        return avg_m_dry_air(h)
+        return m_dry * np.exp(-0.002*(h-85))
 ```
 
 ## Earth as a spinning spheroid
@@ -902,20 +902,20 @@ $$
 p(h,\phi)=p(0)\exp\bigg[-\dfrac{1}{R}\int_0^h\dfrac{g(z,\phi)m_m(z,\phi)}{T(z,\phi)}dz\bigg]
 $$
 
-Our python function will then include the recently defined `g_WGS84_altitude`, `air_avg_molar_mass`, and `ISA_temperature_up_to_1000` functions to evaluate the integral. We don't need to include our recent enhancements of the model in the calculation of $p_{dry}$, since that is needed only to obtain $f_{H_2O}$.
+Our python function will then include the recently defined `g_WGS84_altitude`, `air_avg_molar_mass`, and `ISA_temperature_1000km` functions to evaluate the integral. We don't need to include our recent enhancements of the model in the calculation of $p_{dry}$, since that is needed only to obtain $f_{H_2O}$.
 
 ```{code-cell} ipython
-def pressure_dry_up_to_1000(h,T_surf=288.15,L0=6.5):  
+def pressure_dry_1000km(h,T_surf=288.15,L0=6.5):  
     H1 = ( T_surf - 216.65 ) / L0
     if H1 > 11:
         raise TypeError("Surface temperature is too high or lapse rate is too small")
-      
-    integral, _ = quad(lambda h: 1 / ISA_temperature_up_to_1000(h,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
-    pressure = p0 * np.exp(-m_dry * g0 / R * 1000 * integral)
+    
+    integral, _ = quad(lambda h: air_avg_molar_mass(z,RH=0.0) / ISA_temperature_1000km(h,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    pressure = p0 * np.exp(-g0 / R * 1000 * integral)
 
     return pressure
 
-def water_molar_fraction_up_to_1000(RH,h,T_surf=288.15,L0=6.5):
+def water_molar_fraction_1000km(RH,h,T_surf=288.15,L0=6.5):
     if h > 20 or RH == 0:
         return 0.0
     
@@ -923,31 +923,28 @@ def water_molar_fraction_up_to_1000(RH,h,T_surf=288.15,L0=6.5):
     if H1 > 11:
         raise TypeError("Surface temperature is too high or lapse rate is too small")
 
-    T = ISA_temperature_up_to_1000(h,T_surf,L0)
-    p_dry = pressure_dry_to_1000(h,T_surf,L0)
+    T = ISA_temperature_1000km(h,T_surf,L0)
+    p_dry = pressure_dry_1000km(h,T_surf,L0)
     p_vap = vapor_pressure(T)
-
-    p_water = RH * p_vap
-
-    f_water = p_water / p_dry
+    f_water = RH * p_vap / p_dry
 
     return f_water
 
-def calc_chi_up_to_1000(RH,maxh=1000,T_surf=288.15,L0=6.5):
+def calc_chi_1000km(RH,maxh=1000,T_surf=288.15,L0=6.5):
     H1 = ( T_surf - 216.65 ) / L0
     if H1 > 11:
         raise TypeError("Surface temperature is too high or lapse rate is too small")
     
-    integral_frac, _ = quad(lambda z: water_molar_fraction_up_to_1000(RH,h=z,T_surf,L0) * pressure_dry_up_to_1000(z,T_surf,L0) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, 20, limit=100, points=[0, H1, 20])  #up to 20 km since above that the water fraction is 0 
-    integral_norm, _ = quad(lambda z: pressure_dry_up_to_1000(z,T_surf,L0) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, maxh, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral_frac, _ = quad(lambda z: water_molar_fraction_1000km(RH,z,T_surf,L0) * pressure_dry_1000km(z,T_surf,L0) / ISA_temperature_1000km(z,T_surf,L0), 0, 20, limit=100, points=[0, H1, 20])  #up to 20 km since above that the water fraction is 0 
+    integral_norm, _ = quad(lambda z: pressure_dry_1000km(z,T_surf,L0) / ISA_temperature_1000km(z,T_surf,L0), 0, maxh, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
     
     chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_norm)
 
     return chi
 
-def pressure_moist_WGS84(h,lat,RH=0.0,chi=1.0,T_surf=288.15,L0=6.5):
+def pressure_moist_WGS84_1000km(h,lat,RH=0.0,chi=1.0,T_surf=288.15,L0=6.5):
     H1 = ( T_surf - 216.65 ) / L0
-    integral, _ = quad(lambda z: g_WGS84_altitude(z,lat) * air_avg_molar_mass(z,RH) / ISA_temperature_up_to_1000(z,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
+    integral, _ = quad(lambda z: g_WGS84_altitude(z,lat) * air_avg_molar_mass(z,RH) / ISA_temperature_1000km(z,T_surf,L0), 0, h, limit=100, points=[0, H1, 20, 32, 47, 51, 71, 84.852, 107.41])
 
     p_moist = chi * p0 * np.exp(- 1000 * integral / R)
 
