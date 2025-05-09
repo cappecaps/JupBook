@@ -609,9 +609,6 @@ $$
 
 we deduce that the weight of clouds can be safely ignored.
 
-#### Average water fraction 
-
-The global average water fraction if 0.40\%. However, it is essentially zero above the troposphere. 
 
 
 ### Earth as a spinning spheroid
@@ -853,6 +850,15 @@ def air_avg_molar_mass(h,RH):
 ### Pressure at sea level
 
 Until now, we blindly used the value of 1013.25 hPa as surface pressure. Such value is the average pressure at MSL which then includes the average molar fraction of water, $\overline{f_w}\approx 0.40\%$. We thus need to consider that dry air would produce a larger pressure at sea level, and vice-versa, moist air with a total $f_w > 0.40\%$ produces a smaller surface pressure. 
+
+:::{note} Average water fraction 
+%Maybe put this in pressure at sea level?
+
+The global average water fraction if 0.40\%. However, it is essentially zero above the troposphere. 
+
+:::
+
+#### Chi factor
 
 Pressure at MSL can be evaluated as total mass of the air column (cfr. equation {eq}`pressure_h`):
 
