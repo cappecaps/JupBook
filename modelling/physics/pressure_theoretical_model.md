@@ -7,6 +7,11 @@ tags:
     - modelling
     - atmosphere
     - earth
+numbering: 
+    headings: true
+    heading_4: false
+    figure: true
+    table: true
 jupytext:
   text_representation:
     extension: .md
@@ -18,6 +23,14 @@ kernelspec:
   language: python
   name: python3
 ---
+
+
+%TODO:
+% - Rewrite "pressure at sea level" and redefine \chi to also include gravity change and such
+%   - I need to find f_w such that avg f_w = 0.4%. But considering that f_w(h)=0 for h>20km
+% - Take care that I moved some sections 
+% - Rewrite almost everything to have it more fluid
+%
 
 
 :::{warning} Beware scientists!
@@ -33,16 +46,16 @@ Here reported is an **_ab initio_ modelling** project. You will find many mistak
 I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured outstandingly precisely with a smartphone. It can even detect altitude changes on the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? This way, I could estimate a change in altitude by measuring the change in pressure with my phone. And it works rather nicely!
 :::
 
-# Introduction
+## Introduction
 
 In this chapter, we will try to find, in an _ab initio_ manner, how atmospheric pressure and altitude are related to each other. 
 
 
-# Theoretical model
+## Theoretical model
 
 
 (heading-barometric-formula)=
-## The barometric formula
+### The barometric formula
 
 We start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature. From the ideal gas law, the pressure is given by:
 
@@ -91,15 +104,15 @@ We recognize $m_0g_0h$ as the potential energy of a single gas particle, and $k_
 From the formula we can infer how the pressure profile changes with different parameters. A smaller particle mass makes the gas less attracted to the surface, and thus more spread toward higher altitudes. The same effect is achieved with higher temperatures, because of the higher kinetic energy of the molecules. Vice-versa, larger masses and lower temperatures make the gas more "compressed" at the surface.
 
 
-## Empirical interlude: Earth's atmosphere 
+### Empirical interlude: Earth's atmosphere 
 
 :::{note}
 
-## Reference atmospheric models
+### Reference atmospheric models
 
 The International Standard Atmosphere (ISA) is a model that describes how the atmospheric parameters change with altitude. It assumes a constant gravitational field, dry air, and it divides the atmosphere in various layers, with different characteristics.
 
-### Geopotential altitude
+#### Geopotential altitude
 
 The vertical distance from the Earth's mean sea level (MSL) is called the **geometric altitude**. In aviation and meteorology, the **geopotential altitude** is used instead, and it is defined as:
 
@@ -117,7 +130,7 @@ $$
 The geopotential altitude is the one that we used in the section [](#heading-barometric-formula), where we assumed $g$ constant. We will get rid of this approximation in a later section. 
 
 (ISA_temp)=
-### Temperature
+#### Temperature
 The atmospheric temperature depends on many factors, such as irradiation from Earth's surface, convection, chemical reactions, and interaction with high-energy photons from the Sun. The variation of temperature with altitude is called **lapse rate**, $\Gamma$:
 $$
 \Gamma = -\dfrac{dT}{dh}
@@ -147,8 +160,8 @@ There are other layers above, but can be ignored for now since the atmosphere is
 
 
 (subheading-chemical-composition)=
-### Chemical composition
-The composition of the dry atmosphere is kindly provided by the [NOAA](https://www.noaa.gov/jetstream/atmosphere). However, the molar fractions they provide sum to more than one, due to experimental error (as also [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While looking for the most precise values, I noticed an incongruence in the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: the atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, which is the fraction from circa 50 years ago (in the '70s). The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting the present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
+#### Chemical composition
+The composition of dry atmosphere is kindly provided by [NOAA](https://www.noaa.gov/jetstream/atmosphere). Unfortunately, the molar fractions they provide sum to a number greater than one, due to round-off and experimental errors (see [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While I was looking for more accurate values, I noticed an incongruence in the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: the atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, which is the fraction from circa 50 years ago (in the '70s). The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting the present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
 
 $$
 \begin{aligned}
@@ -183,7 +196,7 @@ This, however, results from the crude approximation that the additional carbon d
 ```
 Which gives an average molar mass for dry air $m_d = 28.9656\ \mathrm{g/mol}$. The value is higher compared to $28.9647\ \mathrm{g/mol}$ encountered online, obtained from a lower level of atmospheric $\mathrm{CO_2}$ of 332 ppm. However, my calculation might be too rough, or blatantly wrong; I'm not too sure. See the [Scripps FAQ page](https://scrippso2.ucsd.edu/faq.html) for additional information.
 
-Of course, the atmosphere is never dry. Local concentrations of water vapor range from 0% to 4%. The molar fractions, including humidity, are simply given by
+Of course, the atmosphere is never dry. Water vapor makes circa 0.25\% of the atmospheric mass (i.e. 0.40\% by volume) and its local concentration ranges within 0-4%. The molar fractions, including humidity, are simply given by
 
 $$
 f_{A}^{(hum)}=\big(1-f_{H_2O}\big)\cdot f_{A}^{(dry)}
@@ -221,7 +234,7 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 :::
 
 
-## Lapse rates
+### Lapse rates
 
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
@@ -340,7 +353,7 @@ Let's keep improving our model by removing most of them one by one. The most imp
 
 
 :::{note}
-### Sea-level pressure reduction
+#### Sea-level pressure reduction
 
 Atmospheric pressure is always reported at the MSL. When a weather station at a certain altitude measures the local pressure, that value is then reduced to the sea level. In other words, the station must estimate the pressure that would be measured if someone digged down to the sea level. This is called **sea-level pressure reduction**, and since no air exists below ground, it is purely hypothetical, so that many assumptions need to be made. For example, how temperature and humidity would vary going down cannot be properly defined.
 
@@ -359,15 +372,15 @@ Additional refinements can be employed, but they are often empirical and specifi
 :::
 
 
-## Humidity
+### Humidity
 The amount of water vapor in the air is usually measured in relative humidity (RH or $\phi$), which is the fraction of the water vapor in the air relative to the "maximum" potential at that temperature. 
 
 
-### From relative humidity
+#### From relative humidity
 
 :::{note}
 
-### Relative humidity and water vapor pressure
+#### Relative humidity and water vapor pressure
 
 **Relative humidity** $\phi$ is defined as the ratio between the measured partial pressure of water $p_w$ and its equilibrium (saturation) vapor pressure $p_{vap,w}$:
 
@@ -529,72 +542,10 @@ p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g_0}{R}(m_d - m_w)\int_0^h \dfra
 \end{align}
 $$(p_moist)
 
-Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. Here, we fixed $p(0)\equiv p^\circ$, so that we are violating the law of conservation of mass. A proper treatment should instead evaluate the total mass of the air column (cfr. equation {eq}`pressure_h`):
-
-$$
-p(0) = \dfrac{F}{A} = \int_{0}^{\infty} n(z)m_{m}(z)g(z) dz = \int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{RT(z)}dz
-$$
-
-Which can be computed only if we already know the vertical profile of the pressure. We will try our best to find the surface pressure _ab initio_ after we further refine our model. In the meantime, we can compute $p_{moist}(0)$ through a multiplying factor $\chi_m$, given by the ratio between the pressures exerted by the moist air column and the dry air column, i.e. $p_{moist}(0) = \chi_m \, p_{dry}(0)$:
-
-$$
-\chi_m = \dfrac{p_{moist}(0)}{p_{dry}(0)} \approx \dfrac{\int_{0}^{\infty} \frac{p_{dry}(z)m_{m}(z)}{T(z)}dz}{\int_{0}^{\infty} \frac{p_{dry}(z)m_{d}}{T(z)}dz} 
-$$
-
-where we approximated the moist air pressure with the dry air pressure. By explicitating $m_m(z)$ according to equation {eq}`water_molar_frac` we obtain
-
-$$
-\chi_m \approx 1 - \dfrac{m_d-m_w}{m_d} \dfrac{\int_{0}^{\infty} f_{H_2O}(z)\frac{p_{dry}(z)}{T(z)}dz}{\int_{0}^{\infty} \frac{p_{dry}(z)}{T(z)}dz} 
-$$
+Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. Here, we fixed $p(0)\equiv p^\circ$, so that we are violating the law of conservation of mass. We will return on this topic in the following section.
 
 
-With the ISA temperature profile and $\varphi = 1$ up to 20 km I compute a value of 0.9983, namely an average water fraction of $\overline{f_{w}}\approx 0.17\%$, and $p_{moist}(0) \approx 1011.5 \ \mathrm{hPa}$. 
-
-Let's then build a function to calculate the factor $\chi$ and then include it in a function that evaluates the pressure with moist air. 
-
-
-```{code-cell} ipython
-def calc_chi(RH,maxh=84.852):
-    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
-    integral_tot, _ = quad(lambda z: pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
-    
-    chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_tot)
-
-    return chi
-
-def pressure_moist(h,RH,chi):
-    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / ISA_temperature(z), 0, h, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
-    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * 1000 * integral)
-
-    return p_moist
-```
-
-```{code-cell} ipython
-:tags: ["hide-input"]
-chi = calc_chi(RH)
-pressure_moist_arr = np.array([pressure_moist(alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
-diff_moist_dry = pressure_moist_arr - pressure_dry_arr
-fig, ax1 = plt.subplots(figsize=(7, 3))
-ax2 = ax1.twinx()
-ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
-ax1.plot(altitudes, pressure_moist_arr,lw=2,label='$p_{moist}$ (RH=1)',color='b')
-ax1.plot(altitudes, pressure_dry_arr,lw=2,label='$p_{dry}$',color='darkred',linestyle='dashed')
-ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
-plt.xlim(0,35)
-ax1.set_xlabel("Altitude (km)")
-ax1.set_ylabel("Pressure (hPa)")
-ax2.set_ylabel("Pressure difference (hPa)")
-ax1.set_ylim(0)
-ax1.legend(loc=(0.65,0.25))
-ax2.legend(loc=(0.65,0.50))
-plt.show()
-```
-
-We can indeed see that the effect of water vapor is small, and the two pressure profiles very close to each other. To appreciate the deviation, also plotted is the relative difference, in red. The difference is in the order of 1 hPa (~ 0.1\%). We are therefore very happy with the dry-air approximation that we made for the molar fraction of water, equation {eq}`water_molar_frac_dry`. The inclusion of the second-order term will provide negligible improvement over substantially higher computational costs.
-
-
-
-### From dew point 
+#### From dew point 
 
 The data avaiable from [atmospheric soundings](wiki:atmospheric_sounding) does not usually provide the relative humidity, but the **dew point** ([](#fig:sounding)). 
 
@@ -648,7 +599,7 @@ $$
 
 
 
-### Clouds
+#### Clouds
 
 Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity exceeds 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one might expect, only a tiny fraction of the cloud volume is occupied by liquid water. LWC ranges within 0.03-3.0 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air. Considering that 1 m{sup}`3` of air at the limit of the troposhere, which is roughly the upper limit for clouds, weigths circa 364 grams:
 
@@ -658,126 +609,16 @@ $$
 
 we deduce that the weight of clouds can be safely ignored.
 
+#### Average water fraction 
 
-## The thermosphere
-
-The thermosphere is the outer layer of the atmosphere, above 80 km of altitude. The name stems from the high temperatures that are reached due to the ionizing radiation from the sun. 
-
-### Temperature of the thermosphere
-
-The ISA model does not include the thermosphere, but reaches a maximum altitude of 86 km, where the temperature is 186.946 K. The data for the thermosphere is provided by the [NRLMSIS empirical model](https://swx-trec.com/msis/). The temperature profile of the two models combined is shown in [](#fig:thermo-T-altitude), where I extended the constant temperature of the stratopause (186.946 K) up to 107.41 km, and used an exponential regression upward (see red line). The empirical fitting gives the function:
-
-$$
-T(h) =  -9799 e^{-0.0238x} + 947.23, \quad 107.41\,\mathrm{km} \le h \le 1000 \,\mathrm{km}
-$$
-
-:::{figure} ../../images/thermosphere_T_h.png
-:label: fig:thermo-T-altitude
-:align: center
-:w: 400px
-
-Temperature profile with altitude (black dots). The red line is the union between the ISA model (below 86 km), and my fitting. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. Graph from my [Desmos](https://www.desmos.com/calculator/pnt2qmypuf).
-
-:::
-
-We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level, and extend the functions to calculate $\chi$ and $p_{dry}$. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
-
-```{code-cell} ipython
-def ISA_temperature_1000km(h,T_surf=None,L0=None):
-    # Define base altitudes and temperatures for each layer
-    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41] 
-    lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
-    base_temperatures = [288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65, 186.946]
-
-    if h > 1000 or h < 0:
-        raise TypeError("Altitude range is 0-1000 km")
-    elif h >= base_altitudes[-1]:   # Thermosphere
-        return -9799 * np.exp(-0.0238 * h) + 947.23
-    elif h < base_altitudes[2]:     # If in troposphere, check for custom parameters
-        if T_surf is not None:
-            temperature = T_surf
-        else:    
-            temperature = base_temperatures[0]
-
-        if L0 is not None and L0 <= 0:
-            raise TypeError("Troposphere lapse rate must be positive and non-zero")
-        elif L0 is not None:
-            lapse_rates[0] = L0
-
-        if T_surf is not None or L0 is not None:
-            if ( temperature - base_temperatures[1] ) / lapse_rates[0] > base_altitudes[2]:
-                raise TypeError("Surface temperature is too high or lapse rate is too small")
-            
-            base_altitudes[1] = ( temperature - base_temperatures[1] ) / lapse_rates[0]
+The global average water fraction if 0.40\%. However, it is essentially zero above the troposphere. 
 
 
-    # Find the layer corresponding to the altitude
-    for i in range(len(base_altitudes) - 1):
-        if h <= base_altitudes[i+1]:
-            return temperature - lapse_rates[i] * (h - base_altitudes[i])
-        else:
-            temperature = base_temperatures[i+1]
-
-```
-
-### Composition in the thermosphere
-
-The value that we calculated in [](#subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition constant up to 85 km ([](#fig:composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km ([](#fig:CO2-altitude)). 
-
-:::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
-:label: fig:composition-altitude
-:align: center
-:w: 400px
-
-Atmospheric composition versus altitude
-
-:::
-
-:::{figure} ../../images/CO2_altitude.jpg
-:label: fig:CO2-altitude
-:align: center
-:w: 400px
-
-Altitude profile of $\mathrm{CO}_2$ molar fraction, in ppm. From [Brown et al. (2024)](https://doi.org/10.1029/2024JA032659). Graph from my [Desmos](https://www.desmos.com/calculator/ohzv68xy5w).
-
-:::
-
-Since the atmospheric pressure at 85 km is $p_{dry}(85\,\mathrm{km})\approx 0.5\,\mathrm{Pa}$. We are therefore talking about minuscole changes, so that we are allowed to be rough. [](#fig:avgm-altitude) shows the vertical profile of the average molar mass of air, computed from the [NRLMSIS empirical model](https://swx-trec.com/msis/) data. A simple exponential regression from an altitude of 85 km can be made (blue dashed line). We can use the following expression for the average molar mass of dry air, in g/mol:
-
-$$
-m_d(h)=\begin{cases}
-28.9656,\quad h\le 85\,\mathrm{km}\\
-28.9656\cdot e^{-0.002(h-85\,\mathrm{km})}, \quad h\gt 85\,\mathrm{km}
-\end{cases}
-$$
-
-
-:::{figure} ../../images/avgm_altitude.png
-:label: fig:avgm-altitude
-:align: center
-:w: 400px
-
-Average molar mass of air (black dots) versus altitude. The blue dashed line is the (exponential) regression. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. 
-
-:::
-
-```{code-cell} ipython
-def air_avg_molar_mass(h,RH):
-    #altitude in km
-    if h < 20:
-        f_water = water_molar_fraction(RH,h=h)
-        return (1 - f_water) * m_dry + f_water * m_water
-    elif h < 85:
-        return m_dry
-    else:
-        return m_dry * np.exp(-0.002*(h-85))
-```
-
-## Earth as a spinning spheroid
+### Earth as a spinning spheroid
 
 Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity).
 
-### Gravity with altitude
+#### Gravity with altitude
 
 Our first step is to include the variation of gravity with altitude. According to Newton's law of gravitation:
 
@@ -794,13 +635,13 @@ $$(g_h)
 where we used the power series. We call the term $\left(1+h/R\right)^{-2}$ the altitude factor, which makes the gravitational acceleration decrease with $h$ squared, as expected.
 
 
-### Reference ellipsoid
+#### Reference ellipsoid
 
 We now more accurately account for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
 
 :::{note}
 
-### World Geodetic System 1984
+#### World Geodetic System 1984
 
 World Geodetic System 1984 describes Earth as a reference ellipsoid with the following parameters
 
@@ -894,7 +735,190 @@ plt.show()
 ```
 
 
-## The final model
+### The thermosphere
+
+The thermosphere is the outer layer of the atmosphere, above 80 km of altitude. The name stems from the high temperatures that are reached due to the ionizing radiation from the sun. 
+
+#### Temperature of the thermosphere
+
+The ISA model does not include the thermosphere, but reaches a maximum altitude of 86 km, where the temperature is 186.946 K. The data for the thermosphere is provided by the [NRLMSIS empirical model](https://swx-trec.com/msis/). The temperature profile of the two models combined is shown in [](#fig:thermo-T-altitude), where I extended the constant temperature of the stratopause (186.946 K) up to 107.41 km, and used an exponential regression upward (see red line). The empirical fitting gives the function:
+
+$$
+T(h) =  -9799 e^{-0.0238x} + 947.23, \quad 107.41\,\mathrm{km} \le h \le 1000 \,\mathrm{km}
+$$
+
+:::{figure} ../../images/thermosphere_T_h.png
+:label: fig:thermo-T-altitude
+:align: center
+:w: 400px
+
+Temperature profile with altitude (black dots). The red line is the union between the ISA model (below 86 km), and my fitting. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. Graph from my [Desmos](https://www.desmos.com/calculator/pnt2qmypuf).
+
+:::
+
+We can include the thermosphere in a new function that returns the temperature up to 1000 km above sea level, and extend the functions to calculate $\chi$ and $p_{dry}$. Let's also add the possibility to change the surface temperature and the lapse rate, as long as it is positive (temperature decreases with altitude).
+
+```{code-cell} ipython
+def ISA_temperature_1000km(h,T_surf=None,L0=None):
+    # Define base altitudes and temperatures for each layer
+    base_altitudes = [0, 11, 20, 32, 47, 51, 71, 84.852, 107.41] 
+    lapse_rates = [6.5, 0.0, -1.0, -2.8, 0.0, 2.8, 2.0, 0.0]
+    base_temperatures = [288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65, 186.946]
+
+    if h > 1000 or h < 0:
+        raise TypeError("Altitude range is 0-1000 km")
+    elif h >= base_altitudes[-1]:   # Thermosphere
+        return -9799 * np.exp(-0.0238 * h) + 947.23
+    elif h < base_altitudes[2]:     # If in troposphere, check for custom parameters
+        if T_surf is not None:
+            temperature = T_surf
+        else:    
+            temperature = base_temperatures[0]
+
+        if L0 is not None and L0 <= 0:
+            raise TypeError("Troposphere lapse rate must be positive and non-zero")
+        elif L0 is not None:
+            lapse_rates[0] = L0
+
+        if T_surf is not None or L0 is not None:
+            if ( temperature - base_temperatures[1] ) / lapse_rates[0] > base_altitudes[2]:
+                raise TypeError("Surface temperature is too high or lapse rate is too small")
+            
+            base_altitudes[1] = ( temperature - base_temperatures[1] ) / lapse_rates[0]
+
+
+    # Find the layer corresponding to the altitude
+    for i in range(len(base_altitudes) - 1):
+        if h <= base_altitudes[i+1]:
+            return temperature - lapse_rates[i] * (h - base_altitudes[i])
+        else:
+            temperature = base_temperatures[i+1]
+
+```
+
+#### Composition in the thermosphere
+
+The value that we calculated in [](#subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition constant up to 85 km ([](#fig:composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km ([](#fig:CO2-altitude)). 
+
+:::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
+:label: fig:composition-altitude
+:align: center
+:w: 400px
+
+Atmospheric composition versus altitude
+
+:::
+
+:::{figure} ../../images/CO2_altitude.jpg
+:label: fig:CO2-altitude
+:align: center
+:w: 400px
+
+Altitude profile of $\mathrm{CO}_2$ molar fraction, in ppm. From [Brown et al. (2024)](https://doi.org/10.1029/2024JA032659). Graph from my [Desmos](https://www.desmos.com/calculator/ohzv68xy5w).
+
+:::
+
+Since the atmospheric pressure at 85 km is $p_{dry}(85\,\mathrm{km})\approx 0.5\,\mathrm{Pa}$. We are therefore talking about minuscole changes, so that we are allowed to be rough. [](#fig:avgm-altitude) shows the vertical profile of the average molar mass of air, computed from the [NRLMSIS empirical model](https://swx-trec.com/msis/) data. A simple exponential regression from an altitude of 85 km can be made (blue dashed line). We can use the following expression for the average molar mass of dry air, in g/mol:
+
+$$
+m_d(h)=\begin{cases}
+28.9656,\quad h\le 85\,\mathrm{km}\\
+28.9656\cdot e^{-0.002(h-85\,\mathrm{km})}, \quad h\gt 85\,\mathrm{km}
+\end{cases}
+$$
+
+
+:::{figure} ../../images/avgm_altitude.png
+:label: fig:avgm-altitude
+:align: center
+:w: 400px
+
+Average molar mass of air (black dots) versus altitude. The blue dashed line is the (exponential) regression. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. 
+
+:::
+
+```{code-cell} ipython
+def air_avg_molar_mass(h,RH):
+    #altitude in km
+    if h < 20:
+        f_water = water_molar_fraction(RH,h=h)
+        return (1 - f_water) * m_dry + f_water * m_water
+    elif h < 85:
+        return m_dry
+    else:
+        return m_dry * np.exp(-0.002*(h-85))
+```
+
+
+### Pressure at sea level
+
+Until now, we blindly used the value of 1013.25 hPa as surface pressure. Such value is the average pressure at MSL which then includes the average molar fraction of water, $\overline{f_w}\approx 0.40\%$. We thus need to consider that dry air would produce a larger pressure at sea level, and vice-versa, moist air with a total $f_w > 0.40\%$ produces a smaller surface pressure. 
+
+Pressure at MSL can be evaluated as total mass of the air column (cfr. equation {eq}`pressure_h`):
+
+$$
+p(0) = \dfrac{F}{A} = \int_{0}^{\infty} n(z)m_{m}(z)g(z) dz = \int_{0}^{\infty} \dfrac{p(z)m_{m}(z)g(z)}{RT(z)}dz
+$$
+
+Which can be computed only if we already know the vertical profile of the pressure. We can of course use the dry-air approximation and estimate $p_{moist}(0)$ by means of a multiplying factor $\chi_m$, given by the ratio between the pressures exerted by the moist air column and the standard air (DEFINE STANDARD) column, i.e. $p_{moist}(0) = \chi_m \, p_{std}(0)$:
+
+$$
+\chi_m = \dfrac{p_{moist}(0)}{p_{std}(0)} \approx \dfrac{\int_{0}^{\infty} \frac{p_{dry}(z)m_{m}(z)g(z)}{T(z)}dz}{\int_{0}^{\infty} \frac{p_{dry}(z)m_{sdt}(z)g(z)}{T(z)}dz} 
+$$
+
+where we approximated the moist air pressure with the dry air pressure. By explicitating $m_m(z)$ according to equation {eq}`water_molar_frac` we obtain
+
+$$
+\chi_m \approx 1 - \dfrac{m_d-m_w}{m_d} \dfrac{\int_{0}^{\infty} f_{H_2O}(z)\frac{p_{dry}(z)}{T(z)}dz}{\int_{0}^{\infty} \frac{p_{dry}(z)}{T(z)}dz} 
+$$
+
+
+With the ISA temperature profile and $\varphi = 1$ up to 20 km I compute a value of 0.9983, namely an average water fraction of $\overline{f_{w}}\approx 0.17\%$, and $p_{moist}(0) \approx 1011.5 \ \mathrm{hPa}$. 
+
+Let's then build a function to calculate the factor $\chi$ and then include it in a function that evaluates the pressure with moist air. 
+
+
+```{code-cell} ipython
+def calc_chi(RH,maxh=84.852):
+    integral_frac, _ = quad(lambda z: water_molar_fraction(RH,h=z) * pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    integral_tot, _ = quad(lambda z: pressure_dry(z) / ISA_temperature(z), 0, maxh, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    
+    chi = 1 - ((m_dry - m_water) / m_dry) * (integral_frac / integral_tot)
+
+    return chi
+
+def pressure_moist(h,RH,chi):
+    integral, _ = quad(lambda z: water_molar_fraction(RH,h=z) / ISA_temperature(z), 0, h, limit=100, points=[0, 11, 20, 32, 47, 51, 71, 84.852])
+    p_moist = chi * pressure_dry(h) * np.exp(g0 / R * (m_dry - m_water) * 1000 * integral)
+
+    return p_moist
+```
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+chi = calc_chi(RH)
+pressure_moist_arr = np.array([pressure_moist(alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
+diff_moist_dry = pressure_moist_arr - pressure_dry_arr
+fig, ax1 = plt.subplots(figsize=(7, 3))
+ax2 = ax1.twinx()
+ax2.axhline(0,color='r',alpha=0.5,linestyle='dashed')
+ax1.plot(altitudes, pressure_moist_arr,lw=2,label='$p_{moist}$ (RH=1)',color='b')
+ax1.plot(altitudes, pressure_dry_arr,lw=2,label='$p_{dry}$',color='darkred',linestyle='dashed')
+ax2.plot(altitudes, diff_moist_dry,lw=2,label=r'$p_{moist}-p_{dry}$',color='r',linestyle='dashed')
+plt.xlim(0,35)
+ax1.set_xlabel("Altitude (km)")
+ax1.set_ylabel("Pressure (hPa)")
+ax2.set_ylabel("Pressure difference (hPa)")
+ax1.set_ylim(0)
+ax1.legend(loc=(0.65,0.25))
+ax2.legend(loc=(0.65,0.50))
+plt.show()
+```
+
+We can indeed see that the effect of water vapor is small, and the two pressure profiles very close to each other. To appreciate the deviation, also plotted is the relative difference, in red. The difference is in the order of 1 hPa (~ 0.1\%). We are therefore very happy with the dry-air approximation that we made for the molar fraction of water, equation {eq}`water_molar_frac_dry`. The inclusion of the second-order term will provide negligible improvement over substantially higher computational costs.
+
+
+### The final model
 
 We thus have built the best model we can concieve for atmospheric model. If we allow temperature and humidity as well to change with latitude, we can write
 
@@ -951,7 +975,7 @@ def pressure_moist_WGS84_1000km(h,lat,RH=0.0,chi=1.0,T_surf=288.15,L0=6.5):
     return p_moist
 ```
 
-### Total atmospheric mass
+#### Total atmospheric mass
 
 With our model, we can calculate the total mass of our atmosphere, assuming a MSL standard pressure of 1013.25 hPa. What we need to do is just integrate the density through the entire atmospheric spherical shell. The density $\rho_d$ of an ideal gas is given by
 
@@ -982,15 +1006,15 @@ where we explicitated $p(h,\phi)$. To calculate $M_{atm}$ thus requires to evalu
 
 
 
-## Altitude from pressure
+### Altitude from pressure
 
 %Take equation T_from lapse and solve it with T = T(0)-Lz or T(h)-Lh-Lz and rearrange
 
 
 
-# Empirical model
+## Empirical model
 
-## The NRLMSIS model
+### The NRLMSIS model
 
 
 
@@ -1001,7 +1025,7 @@ The [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9gJgpgNiAXCYAd
 %We can also substitute the lapse rate with the actual data from [atmospheric sounding](wiki:Atmospheric_sounding), if we want to calculate the change in pressure more accurately. For now, we are happy with the standard lapse rate. 
 
 
-## Using sounding data
+### Using sounding data
 
 
-## The tool
+### The tool
