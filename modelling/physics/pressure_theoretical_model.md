@@ -53,7 +53,7 @@ I did this project in Desmos back in 2021. For some reason, I've always been obs
 
 The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and extremely complex system that makes the modelling of the atmosphere not a trivial task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented through the use empirical data. For example, to derive a mathematical expression for the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come to aid us. 
 
-Here, we will try to model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This simplification implies that our atmosphere is static and thus cannot simulate real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
+Here, we will model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This simplification implies that our atmosphere is static and thus cannot simulate real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
 
 In the following section we will develop the theoretical model of Earth's atmosphere as accurately as we can be. Then, we will implement our final model in python and validate it by calculating known data, such as the total atmospheric mass. Finally, in the fourth section we will make use of measurements to more accurately model atmospheric conditions at any given time and position on Earth. 
 
@@ -69,7 +69,7 @@ $$
     p=nk_BT
 $$ (idealgas)
 
-where $n$ the numerical density of the gas, and $T$ its temperature. To model Earth’s atmosphere, we imagine an infinitely high column of gas subjected to Earth's gravitational field. For now, we assume that Earth is spherically symmetric. We also assume that the mass of the atmosphere is negligible, so that there is no self-interaction, which would make the problem not analytically solvable. The pressure of the gas at a certain altitude $h$ must be equivalent to the pressure exerted by the column of gas above it, due to the gravitational field, i.e.:
+where $n$ the numerical density of the gas, and $T$ its temperature. To model Earth’s atmosphere, we imagine an infinitely high column of gas subjected to Earth's gravitational field. We assume for now that Earth is spherically symmetric. We also assume that the mass of the atmosphere is negligible, so that there is no gravitational self-interaction, which would make the problem not analytically solvable. Within these assumptions, the pressure of the gas at a certain altitude $h$ must be equivalent to the pressure exerted by the column of gas above it, due to the gravitational field, i.e.:
 
 $$
     nk_BT(h) = p(h)=\dfrac{F(h)}{A}
@@ -150,16 +150,16 @@ which is valid only at the vicinity of Earth's surface. The ISA provides a set o
 ```{table} Atmospheric layer data provided by ISA.
 :label: tab:lapse-rates
 :align: center
-| Layer | h range (km) | $\Gamma$ (K/km) | Base T (K) |
+| Layer | h range (km) | $\Gamma$ (K/km) | Base temperature |
 | --- | --- | --- | --- |
-| **Troposphere** | 0 - 11 | +6.5 | 288.15 |
-| **Tropopause** | 11 - 20 | 0.0 | 216.65 |
-| **Stratosphere** | 20 - 32 | -1.0 | 216.65 |
-| **Stratosphere** | 32 - 47 | -2.8 | 228.65 |
-| **Stratopause** | 47 - 51 | 0.0 | 270.65 |
-| **Mesosphere** | 51 - 71 | +2.8 | 270.65 |
-| **Mesosphere** | 71 - 84.852 | +2.0 | 214.65 |
-| **Mesopause** | 84.852 -  | 0.0 | 186.946 |
+| **Troposphere** | 0 - 11 | +6.5 | 15°C (288.15 K) |
+| **Tropopause** | 11 - 20 | 0.0 | -56.5°C (216.65 K) |
+| **Stratosphere** | 20 - 32 | -1.0 | -56.5°C (216.65 K) |
+| **Stratosphere** | 32 - 47 | -2.8 | −44.5°C (228.65 K) |
+| **Stratopause** | 47 - 51 | 0.0 | −2.5°C (270.65 K) |
+| **Mesosphere** | 51 - 71 | +2.8 | −2.5°C (270.65 K) |
+| **Mesosphere** | 71 - 84.852 | +2.0 | −58.5°C (214.65 K) |
+| **Mesopause** | 84.852 -  | 0.0 | -86.204°C (186.946 K) |
 ```
 
 There are other layers above, but can be ignored for now since the atmosphere is extremely rarefied there. The ranges are given in geopotential altitude.
@@ -349,15 +349,14 @@ plt.show()
 ```
 
 Our current model already results in a very good estimation of the pressure, especially close to the surface. As a recap, our model has so far been built within the following approximations:
-- Zero net air flux
+- Zero net mass flux (no wind)
 - Ideal gas law
 - Spherical Earth, no spin
 - Constant gravitational field
 - Constant atmospheric composition, dry air
 - Empirical lapse rates
 
-Let's keep improving our model by removing most of them one by one. The most impactful one is arguably dry air: on Earth, air is never completely dry, but some water vapor is mixed with the other gases. In practice, addition of water vapor affects the composition, namely the molar mass $m$ in our model.
-
+Let's keep improving our model by removing _some_ of them one by one. The most impactful one is likely dry air: on Earth, air is never completely dry, and some water vapor is mixed with the other gases. The addition of water vapor affects the composition, namely the average molar mass $m$.
 
 
 :::{note}
@@ -440,24 +439,24 @@ plt.show()
 
 :::
 
-In order to account for humidity in our model, we need to calculate $f_{H_2O}$, the molar fraction of water in the air, from the relative humidity. Given equation {eq}`relative_humidity`:
+In order to account for humidity in our model, we need to calculate $f_{H_2O}(h)$, the molar fraction of water at a given altitude, from relative humidity. Given equation {eq}`relative_humidity`:
 
 $$
-f_{H_2O}(p,T) = \dfrac{p_w}{p} = \dfrac{\varphi \cdot p_{vap,w}(T)}{p} 
+f_{H_2O}(h) = \dfrac{p_w(h)}{p(h)} = \dfrac{\varphi(h) \cdot p_{vap,w}(T(h))}{p(h)} 
 $$(water_molar_frac)
 
-with $p$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) now includes the molar mass of water $m_w$:
+with $p(h)$ the atmospheric pressure. The average mass of a mole of humid air $m_{m}$ (subscript "m" from moist) then includes the molar mass of water $m_w$:
 
 $$
 \begin{align}
-m_m(p,T) &= m_d\big( 1 - f_{H_2O}(p,T) \big) + m_w f_{H_2O}(p,T) \\[5pt]
-         &=  m_d  - (m_d - m_w) \cdot f_{H_2O}(p,T)
+m_m(h) &= m_d\big( 1 - f_{H_2O}(h) \big) + m_w f_{H_2O}(h) \\[5pt]
+         &=  m_d  - \left(m_d - m_w\right) f_{H_2O}(h)
 \end{align}
 $$(moist_molar_mass)
 
-Water has a smaller mass compared to the other major species in the air, therefore humidity reduces the average molar mass of a parcel of air, making the atmospheric pressure smaller.
+Water has a smaller mass compared to the other major species in the air, therefore humidity reduces the average molar mass of a parcel of air, and makes the surface pressure smaller.
 
-Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air $m_m$, depends on the atmospheric pressure itself. This causes a problem, since the pressure is our sought variable. We can get around this through a trick, that is using a "first-order" dry-air pressure profile $p_{dry}(h)$ from the (equation {eq}`with_lapse`) instead of the real $p_{moist}(h)$. 
+Notice from {eq}`water_molar_frac` that the molar fraction of water, needed to compute the average molar mass of moist air $m_m$, depends on the atmospheric pressure itself, which is our sought variable. A solution might be use a "first-order" dry air pressure profile $p_{dry}(h)$ from the (equation {eq}`with_lapse`) instead of the real $p(h)$. 
 
 $$
 \begin{cases}
@@ -467,14 +466,9 @@ p_{dry}(h) = p(0)e^{-g_0m_d/R\int_0^{h}dz/T(z)}
 \end{cases}
 $$(water_molar_frac_dry)
 
-where we allowed the relative humidity to vary with altitude. Such approximation must not worry us, as the fraction of water vapor in the air never exceeds 5\% and its effect on the atmospheric pressure is very small. I was actually surprised when I discovered this, and I thought that clouds were the real water carriers. Turns out not to be true. We will return on clouds soon. We can do a quick calculation to give ourself an estimate of the water content in the atmosphere. A MSL atmospheric pressure of 1008 hPa is often considered the threshold for a low-pressure area. Assuming that the change in pressure is only attributed to a change in water content, we can use equation {eq}`water_molar_frac` to roughly evaluate an average value of the water fraction, $\overline{f_{H_2O}}$:
-- 1010 hPa: $\overline{f_{H_2O}} \approx 0.85\%$
-- 1008 hPa: $\overline{f_{H_2O}} \approx 1.37\%$
-- 1000 hPa: $\overline{f_{H_2O}} \approx 3.46\%$
+where we allowed the relative humidity to vary with altitude. Such approximation is actually very good and must not worry us, as the fraction of water vapor in the air never exceeds 5\%, so its influence on the atmospheric pressure is very small. I was actually surprised when I discovered this. I also believed that most water is stored in clouds, but, as we will discover, it turns out not to be the case.
 
-The lowest pressure ever recorded is 870 hPa, which gives an average water fraction of 38%, but our assumption is too crude for that case. Atmospheric pressure is also influenced by temperature and air circulation, which play a greater role in stormy weathers.
-
-Let's built a function to compute $f_{H_2O}$ depending on relative humidity and either temperature or altitude (from the barometric formula). 
+Let's built a function to compute $f_{H_2O}$ depending on relative humidity and either temperature or altitude (in the dry air approximation). 
 
 ```{code-cell} ipython
 def water_molar_fraction(RH,T=None,h=None,p=p0):
@@ -541,7 +535,7 @@ $$
 p_{moist}(h)= p(0)\exp\bigg[-\dfrac{g_0}{R}\int_0^h\dfrac{m_m(z)}{T(z)}dz\bigg]
 $$
 
-Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on $z$ (equation {eq}`moist_molar_mass`). We can therefore split the integral into two terms, and we find back the expression for $p_{dry}(h)$, equation {eq}`with_lapse`:
+Notice that $m_m(h)$ can be split into a $m_d$ term, and a term that depends on $z$ (equation {eq}`moist_molar_mass`). To learn the effect of water vapor on the atmospheric pressure, we can split the integral into two terms, and find back the expression for $p_{dry}(h)$, equation {eq}`with_lapse`:
 
 $$
 \begin{align}
@@ -550,7 +544,7 @@ p_{moist}(h) &= p_{dry}(h)\cdot\exp\bigg[\dfrac{g_0}{R}(m_d - m_w)\int_0^h \dfra
 \end{align}
 $$(p_moist)
 
-Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. Here, we fixed $p(0)\equiv p^\circ$, so that we are violating the law of conservation of mass. We will return on this topic in the following section.
+Since $(m_d - m_w) > 0$, the exponential term in equation {eq}`p_moist` is greater than one. Humidity thus seems to effectively increase the pressure, which is the opposite of what we would expect! This is indeed not true. The effect of a smaller air molar mass is twofold. First, it reduces the slope of the pressure vertical profile, because less mass "pushes down" the air column. Secondly, a lighter air column produces a smaller pressure at the surface, $p(0)$. If we set $p(0)\equiv p^\circ$, we would be violating the law of conservation of mass. We will return on this topic when we have a better model. 
 
 
 ### From dew point 
@@ -598,10 +592,10 @@ $$
 \varphi(T,T_{dew}) = \dfrac{p_{vap,w}(T_{dew})}{p_{vap,w}(T)}
 $$
 
-Thus, the fraction of water vapor in the air (equation {eq}`water_molar_frac_dry`) can be rewritten as
+Thus, the fraction of water vapor in the air (equations {eq}`water_molar_frac` and {eq}`water_molar_frac_dry`) can be rewritten as
 
 $$
-f_{H_2O}(h) \approx \dfrac{p_{vap,w}(T_{dew}(h))}{p_{dry}(h)}
+f_{H_2O}(h) = \dfrac{p_{vap,w}(T_{dew}(h))}{p(h)}  \approx \dfrac{p_{vap,w}(T_{dew}(h))}{p_{dry}(h)}
 $$
 
 
@@ -609,13 +603,13 @@ $$
 
 ### Clouds
 
-Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity exceeds 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one might expect, only a tiny fraction of the cloud volume is occupied by liquid water. LWC ranges within 0.03-3.0 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air. Considering that 1 m{sup}`3` of air at the limit of the troposhere, which is roughly the upper limit for clouds, weigths circa 364 grams:
-
+Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity reaches 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one (me) might expect, only a tiny fraction of the cloud volume is occupied by liquid water. Typical LWC ranges within 0.03-0.45 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air, up to 3.0 g/m{sup}`3` for the fearsome cumulonimbus clouds. The mass of one cubic meter of dry air is given by
 $$
-M(11 \, \mathrm{km}) = \dfrac{m_d\,p_{dry}(11\, \mathrm{km})\cdot 1\, \mathrm{m}^3}{RT(11\, \mathrm{km})} \approx 364 \, \mathrm{g}
+M_{dry} = \dfrac{m_d\,p}{RT}\cdot 1\, \mathrm{m}^3
 $$
+At MSL the standard weight is 1.2 kg, but even at the limit of the troposhere (~11 km), which is roughly the upper limit for clouds, where the pressure is ~230 hPa and the temperature is -56.5°C, a cubic meter of air weigths circa 360 grams. This means that the water content of clouds is at most 1\% by mass, with 0.01-0.1\% a typical range. 
 
-we deduce that the weight of clouds can be safely ignored.
+#CALCULATE WATER CONTENT of vapor vs clouds
 
 
 
