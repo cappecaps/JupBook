@@ -110,7 +110,6 @@ We recognize $m_0g_0h$ as the potential energy of a single gas particle, and $k_
 From the formula we can infer how the pressure profile changes with different parameters. A smaller particle mass makes the gas less attracted to the surface, and thus more spread toward higher altitudes. The same effect is achieved with higher temperatures, because of the higher kinetic energy of the molecules. Vice-versa, larger masses and lower temperatures make the gas more "compressed" at the surface.
 
 
-## Empirical interlude: Earth's atmosphere 
 
 :::{note}
 
