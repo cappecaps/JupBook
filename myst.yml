@@ -19,22 +19,22 @@ project:
     - file: modelling/physics/intro_physics.md
       children:
         - file: modelling/physics/pressure_theoretical_model.md
-        - file: modelling/physics/pressure_empirical_model.md
-        - file: modelling/physics/sun_position.md
-        - file: modelling/physics/UV_index.md
-        - file: modelling/physics/radiation.md
-        - file: modelling/physics/color_from_spectrum.md
-        - file: modelling/physics/planet_orbits.md
-        - file: modelling/physics/spotlight.md
-        - file: modelling/physics/tools.md
+        #- file: modelling/physics/pressure_empirical_model.md
+        #- file: modelling/physics/sun_position.md
+        #- file: modelling/physics/UV_index.md
+        #- file: modelling/physics/radiation.md
+        #- file: modelling/physics/color_from_spectrum.md
+        #- file: modelling/physics/planet_orbits.md
+        #- file: modelling/physics/spotlight.md
+        #- file: modelling/physics/tools.md
     #- title: Finance
-    - file: modelling/finance/intro_finance.md
-      children:
-        - file: modelling/finance/trading_tax_efficiency.md
-        - file: modelling/finance/DCA.md
-        - file: modelling/finance/continuous_return.md
-        - file: modelling/finance/equally_vs_MC_weighted.md
-        - file: modelling/finance/index_funds.md
+    #- file: modelling/finance/intro_finance.md
+      #children:
+        #- file: modelling/finance/trading_tax_efficiency.md
+        #- file: modelling/finance/DCA.md
+        #- file: modelling/finance/continuous_return.md
+        #- file: modelling/finance/equally_vs_MC_weighted.md
+        #- file: modelling/finance/index_funds.md
     - file: about_me.md
 
   # To autogenerate a Table of Contents, run "jupyter book init --write-toc"

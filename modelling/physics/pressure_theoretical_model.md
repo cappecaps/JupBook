@@ -26,6 +26,7 @@ kernelspec:
 
 
 %TODO:
+% - rewrite dry approximations to have "p" instead and then have the dry approx for python
 % - Rewrite "pressure at sea level" and redefine \chi to also include gravity change and such
 %   - I need to find f_w such that avg f_w = 0.4%. But considering that f_w(h)=0 for h>20km
 % - Take care that I moved some sections 
@@ -34,31 +35,33 @@ kernelspec:
 
 :::{warning} Beware!
 :label: abinitio-warning
-Here reported is an **_ab initio_ modelling** project. I like to model things by myself, so there will be mistakes, errors, inaccuracies, and wrong interpretations. The reader is advised! 
-%My projects are the opposite of standing on the shoulders of giants. They are like trying to build my own giant, and he's barely alive.
+Here reported is an **_ab initio_ modelling** project. I like to model things by myself, so there will be mistakes, errors, inaccuracies, and wrong interpretations. The reader is advised! My projects are the opposite of standing on the shoulders of giants. They are like trying to build my own giant, and he's barely alive.
 
-The information that I gathered from external sources is found inside the blue boxes. Everything outside the blue boxes is written and developed by myself.
+The information that I gathered from external sources is found inside the blue boxes. Everything outside the blue boxes is written and developed entirely by me. 
 :::
 
 %```{embed} #abinitio-warning
 %```
 
 
-:::{seealso} Preface
+:::{seealso} Comment
 :icon: false
 I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured outstandingly precisely with a smartphone. It can even detect altitude changes on the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? This way, I could estimate a change in altitude by measuring the change in pressure with my phone. And it works rather nicely!
 :::
 
 # Introduction
 
-In this chapter, we will try to find, in an _ab initio_ manner, how atmospheric pressure and altitude are related to each other. 
+The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and extremely complex system that makes the modelling of the atmosphere not a trivial task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented through the use empirical data. For example, to derive a mathematical expression for the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come to aid us. 
 
+Here, we will try to model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This simplification implies that our atmosphere is static and thus cannot simulate real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
 
-# Theoretical model
+In the following section we will develop the theoretical model of Earth's atmosphere as accurately as we can be. Then, we will implement our final model in python and validate it by calculating known data, such as the total atmospheric mass. Finally, in the fourth section we will make use of measurements to more accurately model atmospheric conditions at any given time and position on Earth. 
+
+# Theoretical derivation
 
 
 (heading-barometric-formula)=
-## The barometric formula
+## Atmospheric pressure at equilibrium
 
 We start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature. From the ideal gas law, the pressure is given by:
 
@@ -175,27 +178,28 @@ $$
 
 This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2$ production is less "efficient", because of the formation of water, among other compounds. 
 
-```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, mole fractions and volume fractions are equivalent. 
+```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, molar fractions and volume fractions are equivalent. 
 :label: composition
 :align: center
-| Element | mole fraction |
-| --- | --- |
-| N{sub}`2` | 78.084% |
-| O{sub}`2` | 20.937% |
-| Ar | 0.934% |
-| CO{sub}`2` | 0.042% |
-| Ne | 18.182 ppm |
-| He | 5.24 ppm |
-| CH{sub}`4` | 1.92 ppm |
-| Kr | 1.14 ppm |
-| H{sub}`2` | 0.55 ppm |
-| N{sub}`2`O | 0.33 ppm |
-| CO | 0.10 ppm |
-| Xe | 0.09 ppm |
-| O{sub}`3`| 0.07 ppm |
-| NO{sub}`2` | 0.02 ppm |
-| I{sub}`2` | 0.01 ppm |
-| other | traces | 
+| Element | molar fraction | molar mass (g/mol) |
+| --- | --- | --- | 
+| N{sub}`2` | 78.084% | 28.0134 |
+| O{sub}`2` | _20.937%_ | 31.998 |
+| Ar | 0.934% | 39.948 |
+| CO{sub}`2` | 0.042% | 44.009 |
+| Ne | 18.182 ppm | 20.1797 |
+| He | 5.24 ppm | 4.0026 |
+| CH{sub}`4` | 1.92 ppm | 16.043 |
+| Kr | 1.14 ppm | 83.798 |
+| H{sub}`2` | 0.55 ppm | 2.016 |
+| N{sub}`2`O | 0.33 ppm | 44.0124 |
+| CO | 0.10 ppm | 28.010 |
+| Xe | 0.09 ppm | 131.293 |
+| O{sub}`3`| 0.07 ppm | 47.997 | 
+| NO{sub}`2` | 0.02 ppm | 46.0047 |
+| I{sub}`2` | 0.01 ppm | 126.90447 |
+| other | traces | - |
+| **total** | 100.000% | 28.9656 |
 ```
 Which gives an average molar mass for dry air $m_d = 28.9656\ \mathrm{g/mol}$. The value is higher compared to $28.9647\ \mathrm{g/mol}$ encountered online, obtained from a lower level of atmospheric $\mathrm{CO_2}$ of 332 ppm. However, my calculation might be too rough, or blatantly wrong; I'm not too sure. See the [Scripps FAQ page](https://scrippso2.ucsd.edu/faq.html) for additional information.
 
@@ -345,6 +349,7 @@ plt.show()
 ```
 
 Our current model already results in a very good estimation of the pressure, especially close to the surface. As a recap, our model has so far been built within the following approximations:
+- Zero net air flux
 - Ideal gas law
 - Spherical Earth, no spin
 - Constant gravitational field
@@ -673,6 +678,14 @@ $$
 k = \dfrac{R_pg_p-R_eg_e}{R_eg_e} 
 $$
 
+```{figure} https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/WGS84_mean_Earth_radius.svg/1920px-WGS84_mean_Earth_radius.svg.png
+:label: fig:WGS84-shape
+:align: center
+:w: 300px
+
+Approximation of Earth's shape by the WGS84.
+```
+
 :::
 
 As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modeling is too complicated (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
@@ -833,6 +846,7 @@ $$
 :align: center
 :w: 400px
 
+
 Average molar mass of air (black dots) versus altitude. The blue dashed line is the (exponential) regression. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. 
 
 :::
@@ -854,12 +868,8 @@ def air_avg_molar_mass(h,RH):
 
 Until now, we blindly used the value of 1013.25 hPa as surface pressure. Such value is the average pressure at MSL which then includes the average molar fraction of water, $\overline{f_w}\approx 0.40\%$. We thus need to consider that dry air would produce a larger pressure at sea level, and vice-versa, moist air with a total $f_w > 0.40\%$ produces a smaller surface pressure. 
 
-:::{note} Average water fraction 
-%Maybe put this in pressure at sea level?
+We can thus define the **average air pressure**  $p_{avg}(h)$ as the vertical pressure profile with a total water vapor content of $0.40\%$. 
 
-The global average water fraction if 0.40\%. However, it is essentially zero above the troposphere. 
-
-:::
 
 ### Chi factor
 
@@ -983,6 +993,8 @@ def pressure_moist_WGS84_1000km(h,lat,RH=0.0,chi=1.0,T_surf=288.15,L0=6.5):
 
     return p_moist
 ```
+
+# Model validation
 
 ### Total atmospheric mass
 
