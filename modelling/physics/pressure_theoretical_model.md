@@ -640,7 +640,7 @@ plt.fill_between(altitudes, min_LWC, max_LWC, color='lightblue', alpha=0.6, labe
 plt.fill_between(altitudes, min_cum, max_cum, color='lightskyblue', alpha=0.5, label='cumulonimbus clouds',lw=2)
 plt.xlim(0,11)
 plt.xlabel("Altitude (km)")
-plt.ylabel("atmospheric water mass fraction (%)")
+plt.ylabel("water mass fraction (%)")
 plt.legend()
 plt.show()
 ```
