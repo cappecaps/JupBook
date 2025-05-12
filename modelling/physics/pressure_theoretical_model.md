@@ -522,7 +522,7 @@ and it makes sense that $f_{H_2O}$ never exceeds 5\% on Earth. Taking the temper
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-
+altitudes = np.linspace(0, 11, 25)     # altitude array in km
 f_water_RHs = [[water_molar_fraction(RH=RH,h=alt)*100 for alt in altitudes] for RH in RHs]
 plt.figure(figsize=(7, 3))
 for idx,RH in enumerate(RHs):
@@ -625,7 +625,6 @@ Let's compare the two mass fraction, and see how they change with altitude. Sinc
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 11, 25)     # altitude array in km
 pressure_dry_arr2 = np.array([pressure_dry(alt) for alt in altitudes])   
 temperatures = np.array([ISA_temperature(alt) for alt in altitudes])
 water_vapor_mass_perc = np.array([m_water/m_dry * water_molar_fraction(RH=1.0,h=alt)*100 for alt in altitudes])
@@ -636,8 +635,8 @@ min_cum = 1.0*1E-3/air_specific_mass * 100
 max_cum = 3.0*1E-3/air_specific_mass * 100
 plt.figure(figsize=(7, 3))
 plt.plot(altitudes, water_vapor_mass_perc,lw=2,label=f'Water vapor, RH = 100%',color='darkblue')
-plt.fill_between(altitudes, min_LWC, max_LWC, color='lightblue', alpha=0.6, label='normal clouds',lw=2)
-plt.fill_between(altitudes, min_cum, max_cum, color='lightskyblue', alpha=0.5, label='cumulonimbus clouds',lw=2)
+plt.fill_between(altitudes, min_LWC, max_LWC, color='lightblue', alpha=0.7, label='normal clouds',lw=2)
+plt.fill_between(altitudes, min_cum, max_cum, color='steelblue', alpha=0.5, label='cumulonimbus clouds',lw=2)
 plt.xlim(0,11)
 plt.xlabel("Altitude (km)")
 plt.ylabel("water mass fraction (%)")
