@@ -44,8 +44,15 @@ def pressure_dry(h):
 def vapor_pressure(T):
     # Tetens equation
     a = 610.78
-    b = 17.27
-    c = 237.3  
+    if T > 273.15:
+        b = 17.27
+        c = 237.3
+    elif T < 273.15:
+        b = 21.875
+        c = 265.5
+    else:
+        return a
+
     p_vap = a * np.exp((b * (T - 273.15)) / (T - 273.15 + c))   
     return p_vap
 
@@ -263,3 +270,16 @@ ax1.set_xlabel("Altitude (km)")
 ax1.set_ylabel("Gravity (m/s²)")
 ax1.set_xlim(0)
 plt.show()"""
+
+air_specific_mass = pressure_dry_arr*m_d/(R*temperatures)
+min_LWC = 0.03*1E-3/air_specific_mass * 100   # M_water / M_dry * 100 to make %
+max_LWC = 3.0*1E-3/air_specific_mass * 100
+plt.figure(figsize=(7, 3))
+for idx,RH in enumerate(RHs):
+    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
+plt.fill_between(altitudes, min_LWC, max_LWC, color='lightblue', alpha=0.5, label='LWC range')
+plt.xlim(0,15)
+plt.xlabel("Altitude (km)")
+plt.ylabel("Water vapor molar fraction (%)")
+plt.legend()
+plt.show()

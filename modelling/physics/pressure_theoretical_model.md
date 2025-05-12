@@ -298,7 +298,7 @@ def ISA_temperature(h):
 ```{code-cell} ipython
 :tags: ["hide-input"]
 # Generate altitudes from 0 to 85 km and calculate temperature
-altitudes = np.linspace(0, 85, 100)
+altitudes = np.linspace(0, 85, 50)
 temperatures = [ISA_temperature(alt) for alt in altitudes]
 
 plt.rcParams.update({'font.size': 9})
@@ -329,7 +329,6 @@ def pressure_dry(h):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 85, 500)     # altitude array in km
 pressure_dry_arr = np.array([pressure_dry(alt)/100 for alt in altitudes])   # divided by 100 to return hPa
 pressure_barom_arr = np.array([pressure_barometric(alt)/100 for alt in altitudes])
 plt.rcParams.update({'font.size': 10})
@@ -408,14 +407,21 @@ $$
 p_{vap,w}(T) = a \exp\bigg[\dfrac{bT}{T+c}\bigg]
 $$(tetens)
 
-with $a=610.78,b=17.27,c=237.3$ for $p_{vap,w}:$ °C $\rightarrow$ Pa
+For T in °C and pressure in Pa, the parameters are $a=610.78$, and b=17.27,c=237.3$ above 0°C (liquid-gas interphase) whereas b=21.875,c=265.5$ below 0°C (solid-gas interphase). 
 
 ```{code-cell} ipython
 def vapor_pressure(T):
     # Tetens equation
     a = 610.78
-    b = 17.27
-    c = 237.3  
+    if T > 273.15:
+        b = 17.27
+        c = 237.3
+    elif T < 273.15:
+        b = 21.875
+        c = 265.5
+    else:
+        return a
+
     p_vap = a * np.exp((b * (T - 273.15)) / (T - 273.15 + c))   
     return p_vap
 ```
@@ -502,7 +508,7 @@ plt.figure(figsize=(7, 3))
 cmap = plt.get_cmap('coolwarm')
 colors = cmap(np.linspace(0, 1, len(RHs)))
 for idx,RH in enumerate(RHs):
-    plt.plot(T_array, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
+    plt.plot(T_array, f_water_RHs[:][idx],lw=2,label=f'RH = {int(100*RH)}%',color=colors[len(RHs)-idx-1])
 plt.xlim(0,40)
 plt.ylim(0,8)
 plt.xlabel("Temperature (°C)")
@@ -520,7 +526,7 @@ and it makes sense that $f_{H_2O}$ never exceeds 5\% on Earth. Taking the temper
 f_water_RHs = [[water_molar_fraction(RH=RH,h=alt)*100 for alt in altitudes] for RH in RHs]
 plt.figure(figsize=(7, 3))
 for idx,RH in enumerate(RHs):
-    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {RH}',color=colors[len(RHs)-idx-1])
+    plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {int(100*RH)}%',color=colors[len(RHs)-idx-1])
 plt.xlim(0,15)
 plt.xlabel("Altitude (km)")
 plt.ylabel("Water vapor molar fraction (%)")
@@ -608,8 +614,40 @@ M_{dry} = \dfrac{m_d\,p}{RT}\cdot 1\, \mathrm{m}^3
 $$
 At MSL the standard weight is 1.2 kg, but even at the limit of the troposhere (~11 km), which is roughly the upper limit for clouds, where the pressure is ~230 hPa and the temperature is -56.5°C, a cubic meter of air weigths circa 360 grams. This means that the water content of clouds is at most 1\% by mass, with 0.01-0.1\% a typical range. 
 
-#CALCULATE WATER CONTENT of vapor vs clouds
+Also the mass fraction of water vapor in air is in the order of 1\%: 
 
+$$
+w_{H_2O} = \dfrac{m_w}{m_d} \cdot f_{H_2O} \simeq 0.62 \cdot f_{H_2O} 
+$$
+
+Let's compare the two mass fraction, and see how they change with altitude. Since clouds only form when the relative humidity is close to 100\%, we can plot such case only.
+
+
+```{code-cell} ipython
+:tags: ["hide-input"]
+altitudes = np.linspace(0, 11, 25)     # altitude array in km
+pressure_dry_arr2 = np.array([pressure_dry(alt) for alt in altitudes])   
+temperatures = np.array([ISA_temperature(alt) for alt in altitudes])
+water_vapor_mass_perc = np.array([m_water/m_dry * water_molar_fraction(RH=1.0,h=alt)*100 for alt in altitudes])
+air_specific_mass = m_dry/R * np.divide(pressure_dry_arr2,temperatures)
+min_LWC = 0.03*1E-3/air_specific_mass * 100   # M_water / M_dry * 100 to make %
+max_LWC = 0.45*1E-3/air_specific_mass * 100
+min_cum = 1.0*1E-3/air_specific_mass * 100
+max_cum = 3.0*1E-3/air_specific_mass * 100
+plt.figure(figsize=(7, 3))
+plt.plot(altitudes, water_vapor_mass_perc,lw=2,label=f'Water vapor, RH = 100%',color='darkblue')
+plt.fill_between(altitudes, min_LWC, max_LWC, color='lightblue', alpha=0.6, label='normal clouds',lw=2)
+plt.fill_between(altitudes, min_cum, max_cum, color='lightskyblue', alpha=0.5, label='cumulonimbus clouds',lw=2)
+plt.xlim(0,11)
+plt.xlabel("Altitude (km)")
+plt.ylabel("atmospheric water mass fraction (%)")
+plt.legend()
+plt.show()
+```
+
+We thus learn that, when no cumulonimbus are around, the amount of water vapor exceeds that of liquid water in clouds up to 7-8 km above ground. Upwards, the low temperatures reduce the vapor pressure of water and liquid water becomes more abundant if clouds are present. However, at very high altitudes the typical clouds are the low-density cirrus, carrying a negligible amount of 0.03 g/m{sup}`3` of liquid water. The water-rich cumulonimbus cloudsm instead, contains much more liquid water, that it surpasses the mass of water vapor from 4 km of altitude. And this may be the reason why cumulonimbus are associated with such heavy rains and thunderstorms. 
+
+Due to the very small amount of water that clouds typically carry, and the technical difficulty in modelling them (which clouds are present? At what altitudes? What density to they have?), we choose not to include cloud water content in our model. This is safe in most cases, but please do not use this model during a thunderstorm!
 
 
 ## Earth as a spinning spheroid
@@ -727,7 +765,7 @@ def g_WGS84_altitude(h,latitude):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 800, 100)
+altitudes = np.linspace(0, 800, 50)
 fig, ax = plt.subplots(figsize=(7, 3))
 gravity_eq = [g_WGS84_altitude(alt,0) for alt in altitudes]
 gravity_pol = [g_WGS84_altitude(alt,90) for alt in altitudes]
@@ -908,6 +946,7 @@ def pressure_moist(h,RH,chi):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
+altitudes = np.linspace(0, 85, 50)
 chi = calc_chi(RH)
 pressure_moist_arr = np.array([pressure_moist(alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
 diff_moist_dry = pressure_moist_arr - pressure_dry_arr
