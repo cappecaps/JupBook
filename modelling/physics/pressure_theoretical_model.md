@@ -51,9 +51,9 @@ I did this project in Desmos back in 2021. For some reason, I've always been obs
 
 # Introduction
 
-The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and extremely complex system that makes the modelling of the atmosphere not a trivial task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented through the use empirical data. For example, to derive a mathematical expression for the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come to aid us. 
+The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and out-of-equilibrium system that makes the modelling of the atmosphere a complex task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented through the use empirical data. For example, to derive a mathematical expression for the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come to aid us. 
 
-Here, we will model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This simplification implies that our atmosphere is static and thus cannot simulate real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
+Here, we will model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This gross simplification implies that our atmosphere is static and thus cannot simulate the real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
 
 In the following section we will develop the theoretical model of Earth's atmosphere as accurately as we can be. Then, we will implement our final model in python and validate it by calculating known data, such as the total atmospheric mass. Finally, in the fourth section we will make use of measurements to more accurately model atmospheric conditions at any given time and position on Earth. 
 
@@ -315,7 +315,7 @@ We can define a function that calculates the pressure in dry air, and compare it
 
 ```{code-cell} ipython
 def pressure_barometric(h):
-    pressure = p0 * np.exp(-m_dry * g0 * h / (R * T0))
+    pressure = p0 * np.exp(-m_dry * g0 * h * 1000 / (R * T0))
 
     return pressure
 
@@ -341,8 +341,10 @@ ax1.set_xlabel("Altitude (km)")
 ax1.set_ylabel("Pressure (hPa)")
 ax2.set_ylabel("Pressure difference (hPa)")
 ax1.set_xlim(0,60)
-ax1.legend()
-ax2.legend(loc=7)
+ax1.set_ylim(0)
+ax2.set_ylim(0)
+ax1.legend(loc=(0.55,0.60))
+ax2.legend(loc=(0.55,0.40))
 plt.show()
 ```
 
@@ -407,7 +409,7 @@ $$
 p_{vap,w}(T) = a \exp\bigg[\dfrac{bT}{T+c}\bigg]
 $$(tetens)
 
-For T in °C and pressure in Pa, the parameters are $a=610.78$, and b=17.27,c=237.3$ above 0°C (liquid-gas interphase) whereas b=21.875,c=265.5$ below 0°C (solid-gas interphase). 
+For T in °C and pressure in Pa, the parameters are $a=610.78$, and $b=17.27,c=237.3$ above 0°C (liquid-gas interphase) whereas $b=21.875,c=265.5$ below 0°C (solid-gas interphase). 
 
 ```{code-cell} ipython
 def vapor_pressure(T):
@@ -428,14 +430,15 @@ def vapor_pressure(T):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-T_array = np.linspace(0, 100, 100)  # Temperature range from 0 to 100 °C
+T_array = np.linspace(-50, 100, 100)  # Temperature range from 0 to 100 °C
 vapor_pressure_array = np.array([vapor_pressure(T+273.15)/100 for T in T_array])
 p0_array = [p0/100 for T in T_array]
 
 plt.figure(figsize=(7, 3))
 plt.plot(T_array, vapor_pressure_array, color="darkblue",lw=2,label=r'$p_{vap,w}$')
 plt.plot(T_array, p0_array,linestyle='dashed',color="k",lw=2,label=r'$p\!^\circ$')
-plt.xlim(0,100)
+plt.xlim(-50,100)
+plt.yscale('log')
 plt.xlabel("Temperature (°C)")
 plt.ylabel("Pressure (hPa)")
 plt.legend()
@@ -522,12 +525,12 @@ and it makes sense that $f_{H_2O}$ never exceeds 5\% on Earth. Taking the temper
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 11, 25)     # altitude array in km
+altitudes = np.linspace(0, 11, 20)     # altitude array in km
 f_water_RHs = [[water_molar_fraction(RH=RH,h=alt)*100 for alt in altitudes] for RH in RHs]
 plt.figure(figsize=(7, 3))
 for idx,RH in enumerate(RHs):
     plt.plot(altitudes, f_water_RHs[:][idx],lw=2,label=f'RH = {int(100*RH)}%',color=colors[len(RHs)-idx-1])
-plt.xlim(0,15)
+plt.xlim(0,11)
 plt.xlabel("Altitude (km)")
 plt.ylabel("Water vapor molar fraction (%)")
 plt.legend()
@@ -625,10 +628,10 @@ Let's compare the two mass fraction, and see how they change with altitude. Sinc
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-pressure_dry_arr2 = np.array([pressure_dry(alt) for alt in altitudes])   
+pressure_dry_arr = np.array([pressure_dry(alt) for alt in altitudes])   
 temperatures = np.array([ISA_temperature(alt) for alt in altitudes])
 water_vapor_mass_perc = np.array([m_water/m_dry * water_molar_fraction(RH=1.0,h=alt)*100 for alt in altitudes])
-air_specific_mass = m_dry/R * np.divide(pressure_dry_arr2,temperatures)
+air_specific_mass = m_dry/R * np.divide(pressure_dry_arr,temperatures)
 min_LWC = 0.03*1E-3/air_specific_mass * 100   # M_water / M_dry * 100 to make %
 max_LWC = 0.45*1E-3/air_specific_mass * 100
 min_cum = 1.0*1E-3/air_specific_mass * 100
@@ -646,12 +649,12 @@ plt.show()
 
 We thus learn that, when no cumulonimbus are around, the amount of water vapor exceeds that of liquid water in clouds up to 7-8 km above ground. Upwards, the low temperatures reduce the vapor pressure of water and liquid water becomes more abundant if clouds are present. However, at very high altitudes the typical clouds are the low-density cirrus, carrying a negligible amount of 0.03 g/m{sup}`3` of liquid water. The water-rich cumulonimbus cloudsm instead, contains much more liquid water, that it surpasses the mass of water vapor from 4 km of altitude. And this may be the reason why cumulonimbus are associated with such heavy rains and thunderstorms. 
 
-Due to the very small amount of water that clouds typically carry, and the technical difficulty in modelling them (which clouds are present? At what altitudes? What density to they have?), we choose not to include cloud water content in our model. This is safe in most cases, but please do not use this model during a thunderstorm!
+Due to the very small amount of water that clouds typically carry, and the technical difficulty in modelling them (which types of cloud are present? At what altitudes? What density to they have?), we choose not to include cloud water content in our model. This is safe in most cases, but please do not use this model during a thunderstorm!
 
 
 ## Earth as a spinning spheroid
 
-Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. Our description will then depend not only on altitude $h$, but also on the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity).
+Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. .
 
 ### Gravity with altitude
 
@@ -672,7 +675,7 @@ where we used the power series. We call the term $\left(1+h/R\right)^{-2}$ the a
 
 ### Reference ellipsoid
 
-We now more accurately account for Earth's shape. We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
+We now more accurately account for Earth's shape. Our description will then also include the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity). We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
 
 :::{note}
 
@@ -764,7 +767,7 @@ def g_WGS84_altitude(h,latitude):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 800, 50)
+altitudes = np.linspace(0, 400, 40)
 fig, ax = plt.subplots(figsize=(7, 3))
 gravity_eq = [g_WGS84_altitude(alt,0) for alt in altitudes]
 gravity_pol = [g_WGS84_altitude(alt,90) for alt in altitudes]
@@ -784,18 +787,18 @@ The thermosphere is the outer layer of the atmosphere, above 80 km of altitude. 
 
 ### Temperature of the thermosphere
 
-The ISA model does not include the thermosphere, but reaches a maximum altitude of 86 km, where the temperature is 186.946 K. The data for the thermosphere is provided by the [NRLMSIS empirical model](https://swx-trec.com/msis/). The temperature profile of the two models combined is shown in [](#fig:thermo-T-altitude), where I extended the constant temperature of the stratopause (186.946 K) up to 107.41 km, and used an exponential regression upward (see red line). The empirical fitting gives the function:
+The ISA model does not include the thermosphere, but reaches a maximum altitude of 86 km, where the temperature is 186.946 K. The data for the thermosphere is provided by the [NRLMSIS empirical model](https://swx-trec.com/msis/). The temperature profile of the two models combined is shown in [](#fig:thermo-T-altitude), where I extended the constant temperature of the stratopause (186.946 K) up to 107.41 km, and used an exponential regression againsts the NRLMSIS data (see red line). The empirical fitting gives the function:
 
 $$
 T(h) =  -9799 e^{-0.0238x} + 947.23, \quad 107.41\,\mathrm{km} \le h \le 1000 \,\mathrm{km}
-$$
+$$(eq:thermo_fitting)
 
 :::{figure} ../../images/thermosphere_T_h.png
 :label: fig:thermo-T-altitude
 :align: center
 :w: 400px
 
-Temperature profile with altitude (black dots). The red line is the union between the ISA model (below 86 km), and my fitting. Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. Graph from my [Desmos](https://www.desmos.com/calculator/pnt2qmypuf).
+Temperature profile with altitude (hollow black dots). The orange line are the temperatures from the ISA model (below 107.41 km), while the red line is my fitting (eqaution {eq}`eq:thermo_fitting`). Data from the [NRLMSIS empirical model](https://swx-trec.com/msis/) at 2024-05-01 00:00 UTC over 0°N 50°E. Graph from my [Desmos](https://www.desmos.com/calculator/pnt2qmypuf).
 
 :::
 
@@ -945,9 +948,10 @@ def pressure_moist(h,RH,chi):
 
 ```{code-cell} ipython
 :tags: ["hide-input"]
-altitudes = np.linspace(0, 85, 50)
+altitudes = np.linspace(0, 35, 35)
 chi = calc_chi(RH)
 pressure_moist_arr = np.array([pressure_moist(alt,1.0,chi)/100 for alt in altitudes])   # divided by 100 to return hPa
+pressure_dry_arr = np.array([pressure_dry(alt)/100 for alt in altitudes])
 diff_moist_dry = pressure_moist_arr - pressure_dry_arr
 fig, ax1 = plt.subplots(figsize=(7, 3))
 ax2 = ax1.twinx()
