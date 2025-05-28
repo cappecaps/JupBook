@@ -99,7 +99,10 @@ $$
 p(h)=p(0)\exp\bigg[-\dfrac{1}{k_B}\int_0^h\dfrac{g(z)m_0(z)}{T(z)}dz\bigg]
 $$(general_formula)
 
-Interestingly, to compute the pressure at a certain altitude $h$ we just need to know how the integrand varies below that point, and not above. This is because the formula assumes we know $p(0)$, the pressure at $h=0$, so that the information of the air column above is implicitly contained there. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. In reality, the sea-level pressure varies continuously and it must be measured. We will understand how temperature and average mass vary with altitude in the following section. For now, let’s find the simplest solution by assuming that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants. Such approximation is valid close to the Earth's surface level. We then obtain:
+Interestingly, to compute the pressure at a certain altitude $h$ we just need to know how the integrand varies below that point, and not above. This is because the formula assumes we know $p(0)$, the pressure at $h=0$, so that the information of the air column above is implicitly contained there. If we choose $h=0$ to be the sea level, then $p(0)$ is the barometric pressure, which in standard conditions is $1013.25\ \mathrm{hPa}$. In reality, the sea-level pressure varies continuously and it must be measured. 
+
+## The barometric formula
+Let’s consider the simplest case to solve equation {eq}`general_formula`: we assume that are all variables inside the integral, i.e. composition, temperature, and gravity, are constants with altitude. Such approximation is valid close to the Earth's surface level. We then obtain:
 
 $$
 p_{bar}(h)=p(0)\exp\bigg[-\dfrac{m_0g_0h}{k_BT}\bigg]
@@ -240,7 +243,7 @@ According to the [NRLMSIS empirical model](https://swx-trec.com/msis/?lz=N4Igtg9
 :::
 
 
-## Lapse rates
+## Temperature variation
 
 Let's start from the barometric formula {eq}`barometric_formula` and remove approximations one by one to finally arrive at the general formula {eq}`general_formula`. First, we introduce the empirical lapse rates that we learned above. We thus leave only the temperature term in the integral:
 
@@ -254,7 +257,7 @@ $$
 T(h)= T(h_{i}) - \Gamma_i (h-h_{i})
 $$(T_fromlapse)
 
-with $i$ the atmospheric layer in which $h$ lies, and $h_{i}$ the base altitude of the layer $i$. This however can be easily calculated with a simple code. Let's import the packages.
+with $i$ the atmospheric layer in which $h$ lies, and $h_{i}$ the base altitude of the layer $i$. This however can be calculated with a simple code. Let's import the packages
 
 ```{code-cell} ipython
 import matplotlib.pyplot as plt
@@ -262,7 +265,7 @@ import numpy as np
 from scipy.integrate import quad
 ```
 
-define the global variables that we're going to use across this article
+and define the global variables that we're going to use across this article
 
 ```{code-cell} ipython
     R = 8.31446  # Specific gas constant for dry air in J/(mol·K)
@@ -273,7 +276,8 @@ define the global variables that we're going to use across this article
     p0 = 101325  # MSL standard atmospheric pressure in Pa
 ```
 
-and define a function that returns the temperature at a certain altitude, using equation {eq}`T_fromlapse` for each layer.
+So that we can define a function that calculates the temperature at a given altitude.
+
 
 ```{code-cell} ipython
 def ISA_temperature(h):
@@ -310,7 +314,7 @@ plt.grid(True)
 plt.show()
 ```
 
-We can define a function that calculates the pressure in dry air, and compare it with the barometric approximation.
+We can now see how the lapse rates affect the pressure profile.
 
 
 ```{code-cell} ipython
@@ -509,7 +513,7 @@ RHs = [0.25, 0.50, 0.75, 1.0]
 f_water_RHs = [[water_molar_fraction(RH=RH,T=T+273.15)*100 for T in T_array] for RH in RHs]
 plt.figure(figsize=(7, 3))
 cmap = plt.get_cmap('coolwarm')
-colors = cmap(np.linspace(0, 1, len(RHs)))
+colors = cmap(np.linspace(0, 0.9, len(RHs)))
 for idx,RH in enumerate(RHs):
     plt.plot(T_array, f_water_RHs[:][idx],lw=2,label=f'RH = {int(100*RH)}%',color=colors[len(RHs)-idx-1])
 plt.xlim(0,40)
@@ -611,19 +615,23 @@ $$
 
 ### Clouds
 
-Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity reaches 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one (me) might expect, only a tiny fraction of the cloud volume is occupied by liquid water. Typical LWC ranges within 0.03-0.45 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air, up to 3.0 g/m{sup}`3` for the fearsome cumulonimbus clouds. The mass of one cubic meter of dry air is given by
+Clouds are aerosols of liquid droplets or crystals, which are mainly water. They form when the relative humidity reaches 100\%, or, equivalently, when the (dry-bulb) temperature reaches the dew point. The amount of water in clouds is measured by the <wiki:liquid_water_content> (LWC), which depends on the type of the cloud. Contrary to what one (me) might expect, only a tiny fraction of the cloud volume is occupied by liquid water. Typical LWC ranges within 0.03-0.45 g/m{sup}`3`, i.e. grams of liquid water per cubic meter of air, up to 3.0 g/m{sup}`3` in the fearsome cumulonimbus clouds. The specific mass $\gamma_{air,dry}$ of dry air is given by
 $$
-M_{dry} = \dfrac{m_d\,p}{RT}\cdot 1\, \mathrm{m}^3
+\gamma_{air,dry} = \dfrac{m_d\,p}{RT}
 $$
-At MSL the standard weight is 1.2 kg, but even at the limit of the troposhere (~11 km), which is roughly the upper limit for clouds, where the pressure is ~230 hPa and the temperature is -56.5°C, a cubic meter of air weigths circa 360 grams. This means that the water content of clouds is at most 1\% by mass, with 0.01-0.1\% a typical range. 
-
-Also the mass fraction of water vapor in air is in the order of 1\%: 
+At MSL, the weight of one cubic meter of dry air is 1.2 kg, which is much larger than the typical LWC. Even at the limit of the troposhere (~11 km,roughly the upper limit of clouds), where the pressure is ~230 hPa and the temperature is -56.5°C, a cubic meter of air weigths circa 360 grams. Thus, the mass fraction $w_{H_2O,clouds}$ of liquid water in clouds is at most 1\%, with 0.01-0.1\% a typical range:
 
 $$
-w_{H_2O} = \dfrac{m_w}{m_d} \cdot f_{H_2O} \simeq 0.62 \cdot f_{H_2O} 
+w_{H_2O,clouds} = \dfrac{LWC}{\gamma_{air,dry}} \sim 0.01\%-1\%
 $$
 
-Let's compare the two mass fraction, and see how they change with altitude. Since clouds only form when the relative humidity is close to 100\%, we can plot such case only.
+Since the air in clouds is likely saturated in water vapor, a more proper comparison would be using $m_m(h)$, instead of $m_d$, but the difference is negligible. On the other hand, the mass fraction of atmospheric water vapor in air is in the order of 1\%: 
+
+$$
+w_{H_2O} = \dfrac{m_w}{m_d} \cdot f_{H_2O} \simeq 0.62 \cdot f_{H_2O} \sim 0\%-3\%
+$$
+
+Where, as we know, $f_{H_2O}$ ~0-5\%. Let's then compare the two mass fraction, and see how they change with altitude. As clouds only form when the relative humidity is close to 100\%, we can plot such case only.
 
 
 ```{code-cell} ipython
@@ -647,12 +655,12 @@ plt.legend()
 plt.show()
 ```
 
-We thus learn that, when no cumulonimbus are around, the amount of water vapor exceeds that of liquid water in clouds up to 7-8 km above ground. Upwards, the low temperatures reduce the vapor pressure of water and liquid water becomes more abundant if clouds are present. However, at very high altitudes the typical clouds are the low-density cirrus, carrying a negligible amount of 0.03 g/m{sup}`3` of liquid water. The water-rich cumulonimbus cloudsm instead, contains much more liquid water, that it surpasses the mass of water vapor from 4 km of altitude. And this may be the reason why cumulonimbus are associated with such heavy rains and thunderstorms. 
+We learn that, when no cumulonimbus are around, the amount of water vapor exceeds that of liquid water in clouds up to 7-8 km above ground. Above that range, the low temperatures reduce the vapor pressure of water and, if clouds are present, liquid water becomes more abundant. It should however be noted that, at very high altitudes, the typical clouds are the low-density cirrus, carrying a negligible amount of 0.03 g/m{sup}`3` of liquid water. The water-rich cumulonimbus clouds, instead, contains much more liquid water, that it surpasses the mass of water vapor from 4 km of altitude. And this may be the reason why cumulonimbus are associated with such heavy rains and thunderstorms. 
 
 Due to the very small amount of water that clouds typically carry, and the technical difficulty in modelling them (which types of cloud are present? At what altitudes? What density to they have?), we choose not to include cloud water content in our model. This is safe in most cases, but please do not use this model during a thunderstorm!
 
 
-## Earth as a spinning spheroid
+## Gravitational field
 
 Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. .
 
