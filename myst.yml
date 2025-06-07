@@ -27,13 +27,13 @@ project:
         #- file: modelling/physics/planet_orbits.md
         #- file: modelling/physics/spotlight.md
         #- file: modelling/physics/tools.md
-    #- title: Finance
-    #- file: modelling/finance/intro_finance.md
-      #children:
+    - title: Finance
+    - file: modelling/finance/intro_finance.md
+      children:
         #- file: modelling/finance/trading_tax_efficiency.md
         #- file: modelling/finance/DCA.md
         #- file: modelling/finance/continuous_return.md
-        #- file: modelling/finance/equally_vs_MC_weighted.md
+        - file: modelling/finance/equally_vs_MC_weighted.md
         #- file: modelling/finance/index_funds.md
     - file: about_me.md
 
