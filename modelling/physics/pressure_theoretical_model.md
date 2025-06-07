@@ -35,7 +35,7 @@ kernelspec:
 
 :::{warning} Beware!
 :label: abinitio-warning
-Here reported is an **_ab initio_ modelling** project. I like to model things by myself, so there will be mistakes, errors, inaccuracies, and wrong interpretations. The reader is advised! My projects are the opposite of standing on the shoulders of giants. They are like trying to build my own giant, and he's barely alive.
+This is an **_ab initio_ modelling** project. I like to model things by myself, so there will be mistakes, errors, inaccuracies, and wrong interpretations. The reader is advised! My projects are the opposite of standing on the shoulders of giants. They are like trying to build my own giant, and he's barely alive.
 
 The information that I gathered from external sources is found inside the blue boxes. Everything outside the blue boxes is written and developed entirely by me. 
 :::
@@ -46,24 +46,20 @@ The information that I gathered from external sources is found inside the blue b
 
 :::{seealso} Comment
 :icon: false
-I did this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps because I discovered that it can be measured outstandingly precisely with a smartphone. It can even detect altitude changes on the order of meters. So I asked myself: can I derive how the atmospheric pressure varies with altitude, and can I do it as accurately as possible? This way, I could estimate a change in altitude by measuring the change in pressure with my phone. And it works rather nicely!
+I made this project in Desmos back in 2021. For some reason, I've always been obsessed with air pressure, perhaps since I discovered that pressure can be measured with an outstanding accuracy with a smartphone. With it, you can even detect altitude changes on the order of 1 meter! Then the need to develop a model that describes how the atmospheric pressure varies with altitude comes naturally. My goal was to estimate a change in altitude by measuring the change in pressure with my phone.
 :::
 
 # Introduction
 
-The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and out-of-equilibrium system that makes the modelling of the atmosphere a complex task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented through the use empirical data. For example, to derive a mathematical expression for the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come to aid us. 
+The atmosphere is a mass of air that is gravitationally bound to a planet. On Earth, phenomena as solar irradiation, water evaporation, precipitations, turbulent convective motion, Coriolis force, photochemical reactions, and many more, all contribute to the formation of a chaotic and out-of-equilibrium system that makes the modelling of the atmosphere a complex task. While we will try to be as _ab initio_ as possible, many of such factors cannot be easily modelled, and need to be implemented by means of empirical data. For example, to derive a mathematical expression of the atmospheric temperature at any given altitude is way too complex to be worth trying, and that is where measurements come in aid. Here, we will model a fictitious atmosphere at equilibrium, which implies that the net mass flux (i.e. wind) is zero at any point in space, and pressure changes (i.e. weather) do not take place. Although this is a gross simplification of our atmosphere, our model will prove to be nicely robust.
 
-Here, we will model a fictitious atmosphere at equilibrium, where no net mass flux (wind) exists at any point of space. This gross simplification implies that our atmosphere is static and thus cannot simulate the real world dynamics, nor predict the weather. Nonetheless, our model will prove to be extremely robust, at the cost of closing an eye and manually tune some of the empirical parameters.
-
-In the following section we will develop the theoretical model of Earth's atmosphere as accurately as we can be. Then, we will implement our final model in python and validate it by calculating known data, such as the total atmospheric mass. Finally, in the fourth section we will make use of measurements to more accurately model atmospheric conditions at any given time and position on Earth. 
 
 # Theoretical derivation
-
 
 (heading-barometric-formula)=
 ## Atmospheric pressure at equilibrium
 
-We start from considering an ideal gas. This approximation works well with the Earth’s atmosphere, because it has a sufficiently low density and high temperature. From the ideal gas law, the pressure is given by:
+The development of the our model necessarily starts with a description of the gas molecules. And what's a better start than the ideal gas law? This approximation actually works well with the Earth’s atmosphere, since it has sufficiently low densities and high temperatures. The pressure is given by
 
 $$
     p=nk_BT
@@ -75,7 +71,7 @@ $$
     nk_BT(h) = p(h)=\dfrac{F(h)}{A}
 $$ (pressure_gravfield)
 
-with $F$ the weight of the gas column above $h$. The pressure of the column can also be calculated as the integral along the vertical direction $z$ of the mass density $\rho(z)$ of the gas, times the gravitational acceleration $g(z)$:
+where $F$ the weight of the gas column above $h$. The pressure of the column can also be calculated as the integral along the vertical direction $z$ of the mass density $\rho(z)$ of the gas, times the gravitational acceleration $g(z)$:
 
 $$
 p(h) = \int_h^{+\infty}g(z)\rho(z) dz  = \int_h^{+\infty}g(z)m_0(z)n(z) dz 
@@ -167,7 +163,6 @@ which is valid only at the vicinity of Earth's surface. The ISA provides a set o
 There are other layers above, but can be ignored for now since the atmosphere is extremely rarefied there. The ranges are given in geopotential altitude.
 
 
-(subheading-chemical-composition)=
 ### Chemical composition
 The composition of dry atmosphere is kindly provided by [NOAA](https://www.noaa.gov/jetstream/atmosphere). Unfortunately, the molar fractions they provide sum to a number greater than one, due to round-off and experimental errors (see [wikipedia](https://en.wikipedia.org/wiki/Atmosphere_of_Earth#Composition) reports). While I was looking for more accurate values, I noticed an incongruence in the reported amount of $\mathrm{CO_2}$. I quickly realized a shocking fact: the atmospheric concentration of $\mathrm{CO_2}$ is rising so quickly that most values are now outdated. For example, [engineering toolbox](https://www.engineeringtoolbox.com/molecular-mass-air-d_679.html) uses a value of $f_{CO_2}=0.033\%$, which is the fraction from circa 50 years ago (in the '70s). The value is now (2025) $0.042\%$, giving an outstanding 27% increase. This makes me wonder whether NOAA takes into account the change in fractional concentrations due to $\mathrm{CO_2}$ emissions and $\mathrm{O_2}$ depletion. A strong hint is that by substituting the present $\mathrm{CO_2}$ concentration with $0.033\%$ in NOAA's value, the sum magically becomes $1$. For this reason, I took NOAA's value and assumed that the $0.011\%$ increase is due to combustion, and it substitutes $\mathrm{O_2}$ molecules
 
@@ -181,7 +176,7 @@ $$
 This, however, results from the crude approximation that the additional carbon dioxide has been produced by a stoichiometric reaction between atmospheric oxygen and carbon, while all other species stay constant. In reality, $\mathrm{CO}_2$ production is less "efficient", because of the formation of water, among other compounds. 
 
 ```{table} Chemical composition of Earth's dry atmosphere, modified data from [NOAA](https://www.noaa.gov/jetstream/atmosphere) to sum to one. In the ideal gas approximation, molar fractions and volume fractions are equivalent. 
-:label: composition
+:label: tab:composition
 :align: center
 | Element | molar fraction | molar mass (g/mol) |
 | --- | --- | --- | 
@@ -440,7 +435,7 @@ p0_array = [p0/100 for T in T_array]
 
 plt.figure(figsize=(7, 3))
 plt.plot(T_array, vapor_pressure_array, color="darkblue",lw=2,label=r'$p_{vap,w}$')
-plt.plot(T_array, p0_array,linestyle='dashed',color="k",lw=2,label=r'$p\!^\circ$')
+plt.plot(T_array, p0_array,linestyle='dashed',color="k",lw=2,label=r'$p\!^\circ = 1013.25$ hPa')
 plt.xlim(-50,100)
 plt.yscale('log')
 plt.xlabel("Temperature (°C)")
@@ -662,7 +657,7 @@ Due to the very small amount of water that clouds typically carry, and the techn
 
 ## Gravitational field
 
-Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field. .
+Let's now further improve our model by considering Earth as a spheroid (or ellipsoid) that spins and generates a gravitational field.
 
 ### Gravity with altitude
 
@@ -678,12 +673,12 @@ $$
 g_0(h) = g_0\sum_{n=0}^{\infty} (-1)^{n}\left(n+1\right) \dfrac{h^n}{R^n}= \dfrac{g_0}{\left(1+\dfrac{h}{R}\right)^2}
 $$(g_h)
 
-where we used the power series. We call the term $\left(1+h/R\right)^{-2}$ the altitude factor, which makes the gravitational acceleration decrease with $h$ squared, as expected.
+where we used the power series. We call the term $\left(1+h/R\right)^{-2}$ the **altitude factor**, which makes the gravitational acceleration decrease with $h^2$.
 
 
 ### Reference ellipsoid
 
-We now more accurately account for Earth's shape. Our description will then also include the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity). We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
+We now want to describe Earth's shape more accurately than using a sphere. Our model will then also include the geographic latitude $\varphi$ (distinct from $\phi$ for relative humidity). We will use the World Geodetic System 1984 (WGS 84), which is used by the GPS system and suggested by the <wiki:International_Civil_Aviation_Organization>. 
 
 :::{note}
 
@@ -729,9 +724,9 @@ Approximation of Earth's shape by the WGS84.
 
 :::
 
-As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modeling is too complicated (albeit cumbersome), but because I suppose that WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
+As much as I would love to, modeling Earth's gravitational field _ab initio_ is not worth it. Not because the mathematical modeling is too complicated (albeit cumbersome), but because WGS84 relies on empirical data, and it's of course better than any model I could ever devise. 
 
-We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But first, we need to find how Earth's radius varies with the latitude. The radius of the WGS84 ellipsoid with altitude is:
+We now want to combine equation {eq}`WGS84` with {eq}`g_h` to obtain a general expression for the gravitational acceleration for any $\varphi$ and $h$. But to do this, we first need to find how Earth's radius varies with the latitude. The radius of the WGS84 ellipsoid with altitude is:
 
 $$
 R(\phi) = \dfrac{R_eR_p}{\sqrt{\left(R_p\cos(\phi)\right)^2+\left(R_e\sin(\phi)\right)^2}}
@@ -852,7 +847,7 @@ def ISA_temperature_1000km(h,T_surf=None,L0=None):
 
 ### Composition in the thermosphere
 
-The value that we calculated in [](#subheading-chemical-composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition constant up to 85 km ([](#fig:composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km ([](#fig:CO2-altitude)). 
+The value that we calculated from [](tab:composition) refers to the global average of the atmospheric composition. We are now interested in how such composition changes with altitude. We know that turbulence and diffusion make the atmospheric composition constant up to 85 km ([](#fig:composition-altitude)). The vertical profile of carbon dioxide, one of the heaviest molecules in the air, starts decreasing from an altitude of 60 km ([](#fig:CO2-altitude)). 
 
 :::{figure} https://upload.wikimedia.org/wikipedia/commons/b/bd/Chemical_composition_of_atmosphere_accordig_to_altitude.png
 :label: fig:composition-altitude
